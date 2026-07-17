@@ -22,7 +22,6 @@ import { contributedRoutes, NEW_CHAT_ROUTE, ROUTES_AREA, sessionRoute } from '..
 import { useStatusSnapshot } from '../shell/hooks/use-status-snapshot'
 import { useStatusbarItems } from '../shell/hooks/use-statusbar-items'
 import { ModelMenuPanel } from '../shell/model-menu-panel'
-import { StatusbarControls } from '../shell/statusbar-controls'
 
 import { setStatusbarItemGroup, useStatusbarContributions } from './panes'
 import type { SidebarActions, WiringActions } from './types'
@@ -78,7 +77,11 @@ export const StatusbarSurface = memo(function StatusbarSurface({
   const extraLeftItems = useStatusbarContributions('left')
   const extraRightItems = useStatusbarContributions('right')
 
-  const { leftStatusbarItems, statusbarItems } = useStatusbarItems({
+  // Bottom statusbar is off entirely for CCF's simplified chrome (all its
+  // items are still reachable via ⌘K — see the palette entries in
+  // contrib/controller.tsx). Hooks stay called for parity/no side-effect
+  // changes; the render result is just discarded.
+  useStatusbarItems({
     agentsOpen,
     chatOpen,
     commandCenterOpen,
@@ -94,7 +97,7 @@ export const StatusbarSurface = memo(function StatusbarSurface({
     toggleCommandCenter: actions.toggleCommandCenter
   })
 
-  return <StatusbarControls items={statusbarItems} leftItems={leftStatusbarItems} />
+  return null
 })
 
 /** The workspace pane: the real route table (chat + full-page views + plugin

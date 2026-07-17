@@ -213,7 +213,8 @@ export function useStatusbarItems({
     return {
       className: !applying && behind > 0 ? 'text-primary hover:text-primary' : undefined,
       detail: appVersion && sha && !applying && !remote ? sha : undefined,
-      hidden: !appVersion && !sha,
+      // Trimmed from the default statusbar (beginner-facing simplification).
+      hidden: true,
       icon: applying ? <Loader2 className="size-3 animate-spin" /> : <Hash className="size-3" />,
       id: 'version-client',
       label,
@@ -263,7 +264,8 @@ export function useStatusbarItems({
 
     return {
       className: !applying && updateAvailable ? 'text-primary hover:text-primary' : undefined,
-      hidden: !backendVersion,
+      // Trimmed from the default statusbar (beginner-facing simplification).
+      hidden: true,
       icon: applying ? <Loader2 className="size-3 animate-spin" /> : <Hash className="size-3" />,
       id: 'version-backend',
       label,
@@ -286,6 +288,9 @@ export function useStatusbarItems({
     () => [
       {
         className: `w-7 justify-center px-0${commandCenterOpen ? ' bg-accent/55 text-foreground' : ''}`,
+        // Trimmed from the default statusbar for a simpler beginner-facing
+        // chrome — still reachable via ⌘K ("Command Center").
+        hidden: true,
         icon: <Command className="size-3.5" />,
         id: 'command-center',
         onSelect: toggleCommandCenter,
@@ -310,7 +315,8 @@ export function useStatusbarItems({
         variant: 'menu'
       },
       {
-        hidden: !currentCwd,
+        // Trimmed from the default statusbar (beginner-facing simplification).
+        hidden: true,
         icon: <FolderOpen className="size-3" />,
         id: 'workspace-cwd',
         label: currentCwd ? workspaceLabel(currentCwd) : undefined,
@@ -358,6 +364,8 @@ export function useStatusbarItems({
           ) : (
             <Codicon name="hubot" size="0.75rem" />
           ),
+        // Trimmed from the default statusbar — still reachable via ⌘K ("Agents").
+        hidden: true,
         id: 'agents',
         label: copy.agents,
         onSelect: openAgents,
@@ -365,6 +373,8 @@ export function useStatusbarItems({
         variant: 'action'
       },
       {
+        // Trimmed from the default statusbar — still reachable via ⌘K ("Cron").
+        hidden: true,
         icon: <Clock className="size-3" />,
         id: 'cron',
         label: copy.cron,
@@ -398,7 +408,8 @@ export function useStatusbarItems({
     () => [
       {
         detail: <LiveDuration since={turnStartedAt} />,
-        hidden: !busy || !turnStartedAt,
+        // Trimmed from the default statusbar (beginner-facing simplification).
+        hidden: true,
         icon: <Loader2 className="size-3 animate-spin" />,
         id: 'running-timer',
         label: copy.turnRunning,
@@ -407,7 +418,8 @@ export function useStatusbarItems({
       },
       {
         detail: contextBar || undefined,
-        hidden: !contextUsage,
+        // Trimmed from the default statusbar (beginner-facing simplification).
+        hidden: true,
         id: 'context-usage',
         label: contextUsage,
         menuAlign: 'end',
@@ -420,7 +432,8 @@ export function useStatusbarItems({
       },
       {
         detail: <LiveDuration since={sessionStartedAt} />,
-        hidden: !sessionStartedAt,
+        // Trimmed from the default statusbar (beginner-facing simplification).
+        hidden: true,
         id: 'session-timer',
         label: copy.session,
         title: copy.runtimeSessionElapsed,
@@ -433,7 +446,9 @@ export function useStatusbarItems({
       {
         actionId: 'view.showTerminal',
         className: `w-7 justify-center px-0${terminalTakeover ? ' bg-accent/55 text-foreground' : ''}`,
-        hidden: !chatOpen,
+        // Trimmed from the default statusbar — still reachable via ⌘K
+        // ("Toggle terminal") or the ⌃` shortcut.
+        hidden: true,
         icon: <Terminal className="size-3.5" />,
         id: 'terminal',
         onSelect: () => setTerminalTakeover(!$terminalTakeover.get()),
@@ -447,8 +462,6 @@ export function useStatusbarItems({
       activeSessionId,
       approvalModeItem,
       backendVersionItem,
-      busy,
-      chatOpen,
       clientVersionItem,
       contextBar,
       contextUsage,

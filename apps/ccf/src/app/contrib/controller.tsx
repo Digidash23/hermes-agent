@@ -33,7 +33,7 @@ import { Slot } from '@/contrib/react/slot'
 import { registry } from '@/contrib/registry'
 import { discoverRuntimePlugins } from '@/contrib/runtime-loader'
 import { sessionTitle as storedSessionTitle } from '@/lib/chat-runtime'
-import { LayoutDashboard } from '@/lib/icons'
+import { Brain, Clock, Command, LayoutDashboard, Terminal } from '@/lib/icons'
 import { type KeybindContribution, KEYBINDS_AREA } from '@/lib/keybinds/actions'
 import { Codecs, persistentAtom } from '@/lib/persisted'
 import {
@@ -62,6 +62,7 @@ import {
   WorkspaceTabMenu
 } from '../chat/session-tile'
 import { $terminalTakeover, setTerminalTakeover } from '../right-sidebar/store'
+import { AGENTS_ROUTE, COMMAND_CENTER_ROUTE, CRON_ROUTE } from '../routes'
 import { $workspaceIsPage } from '../routes'
 
 import { FilesPane, LogsPane, PreviewRailPane, ReviewPaneContent } from './panes'
@@ -299,6 +300,59 @@ registry.registerMany([
       label: 'Keyboard shortcuts',
       keywords: ['keybinds', 'shortcuts', 'hotkeys', 'keyboard'],
       run: () => window.dispatchEvent(new CustomEvent('hermes:open-keybinds'))
+    } satisfies PaletteContribution
+  },
+  // Non-statusbar doors for Command Center / Agents / Cron / Terminal — the
+  // statusbar no longer shows these (trimmed to just gateway + approval mode
+  // for a simpler default chrome), so ⌘K is now how they're reached.
+  {
+    id: 'commandCenter.open',
+    area: PALETTE_AREA,
+    data: {
+      id: 'commandCenter.open',
+      label: 'Command Center',
+      icon: Command,
+      keywords: ['command', 'center', 'system', 'logs', 'status'],
+      run: () => {
+        window.location.hash = COMMAND_CENTER_ROUTE
+      }
+    } satisfies PaletteContribution
+  },
+  {
+    id: 'agents.open',
+    area: PALETTE_AREA,
+    data: {
+      id: 'agents.open',
+      label: 'Agents',
+      icon: Brain,
+      keywords: ['agents', 'subagents', 'sessions'],
+      run: () => {
+        window.location.hash = AGENTS_ROUTE
+      }
+    } satisfies PaletteContribution
+  },
+  {
+    id: 'cron.open',
+    area: PALETTE_AREA,
+    data: {
+      id: 'cron.open',
+      label: 'Cron',
+      icon: Clock,
+      keywords: ['cron', 'scheduled', 'jobs', 'automation'],
+      run: () => {
+        window.location.hash = CRON_ROUTE
+      }
+    } satisfies PaletteContribution
+  },
+  {
+    id: 'terminal.toggle',
+    area: PALETTE_AREA,
+    data: {
+      id: 'terminal.toggle',
+      label: 'Toggle terminal',
+      icon: Terminal,
+      keywords: ['terminal', 'shell', 'console'],
+      run: () => setTerminalTakeover(!$terminalTakeover.get())
     } satisfies PaletteContribution
   }
 ])
