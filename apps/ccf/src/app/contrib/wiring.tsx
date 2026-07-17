@@ -513,7 +513,6 @@ export function ContribWiring({ children }: { children: ReactNode }) {
     executeSlashCommand,
     handleThreadMessagesChange,
     reloadFromMessage,
-    restoreToMessage,
     steerPrompt,
     submitText,
     transcribeVoiceAudio
@@ -747,7 +746,6 @@ export function ContribWiring({ children }: { children: ReactNode }) {
     onPickImages: () => void composer.pickImages(),
     onReload: reloadFromMessage,
     onRemoveAttachment: id => void composer.removeAttachment(id),
-    onRestoreToMessage: restoreToMessage,
     // Already on screen (open tile, or the main session)? Jump to its tab;
     // otherwise load it into main.
     onResumeSession: sessionId => {

@@ -78,7 +78,6 @@ interface ChatViewProps extends Omit<React.ComponentProps<'div'>, 'onSubmit'> {
   onThreadMessagesChange: (messages: readonly ThreadMessage[]) => void
   onEdit: (message: AppendMessage) => Promise<void>
   onReload: (parentId: string | null) => Promise<void>
-  onRestoreToMessage?: (messageId: string, target?: { text?: string; userOrdinal?: number | null }) => Promise<void>
   onRetryResume: (sessionId: string) => void
   onTranscribeAudio?: (audio: Blob) => Promise<string>
   onDismissError?: (messageId: string) => void
@@ -224,7 +223,6 @@ export function ChatView({
   onThreadMessagesChange,
   onEdit,
   onReload,
-  onRestoreToMessage,
   onRetryResume,
   onTranscribeAudio,
   onDismissError
@@ -449,7 +447,6 @@ export function ChatView({
             onBranchInNewChat={onBranchInNewChat}
             onCancel={onCancel}
             onDismissError={onDismissError}
-            onRestoreToMessage={onRestoreToMessage}
             sessionId={activeSessionId}
             sessionKey={threadKey}
           />

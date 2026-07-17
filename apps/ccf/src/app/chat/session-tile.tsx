@@ -151,7 +151,6 @@ function TileChat({
           onPickImages={() => void composer.pickImages()}
           onReload={actions.reloadFromMessage}
           onRemoveAttachment={id => void composer.removeAttachment(id)}
-          onRestoreToMessage={actions.restoreToMessage}
           onRetryResume={() => patchSessionTile(storedSessionId, { error: undefined })}
           onSteer={actions.steerPrompt}
           onSubmit={actions.submitText}

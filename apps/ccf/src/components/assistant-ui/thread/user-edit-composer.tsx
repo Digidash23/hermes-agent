@@ -47,7 +47,7 @@ import {
 import { uploadComposerAttachment } from '@/app/session/hooks/use-prompt-actions'
 import { hermesDirectiveFormatter } from '@/components/assistant-ui/directive-text'
 import {
-  StickyHumanMessageContainer,
+  HumanMessageRow,
   StopGlyph,
   USER_ACTION_ICON_BUTTON_CLASS,
   USER_ACTION_ICON_SIZE,
@@ -595,9 +595,9 @@ export const UserEditComposer: FC<UserEditComposerProps> = ({ cwd, gateway, sess
 
   return (
     <ComposerPrimitive.Root className="contents" data-slot="aui_edit-composer-root">
-      <StickyHumanMessageContainer>
+      <HumanMessageRow>
         <div
-          className="composer-human-message-container human-execution-message-top relative flex w-full items-start rounded-md bg-(--ui-chat-surface-background)"
+          className="composer-human-message-container human-execution-message-top relative flex items-start rounded-md bg-(--ui-chat-surface-background)"
           onBlur={handleEditBlur}
           onDragEnter={handleDragEnter}
           onDragLeave={handleDragLeave}
@@ -619,7 +619,13 @@ export const UserEditComposer: FC<UserEditComposerProps> = ({ cwd, gateway, sess
           <div
             className={cn(
               USER_BUBBLE_BASE_CLASS,
-              'ui-prompt-input__container relative border-(--ui-stroke-secondary) data-[expanded=true]:min-h-20',
+              // The read-only bubble (USER_BUBBLE_BASE_CLASS) is deliberately
+              // borderless to match AWM's flat bubble style — this is an
+              // active text input though, not a static bubble, so it needs
+              // its own visible border back, and a real width instead of
+              // shrink-to-fit (an editable box should stay wide and stable
+              // as you type, not resize around the content).
+              'ui-prompt-input__container relative w-full border border-(--ui-stroke-secondary) data-[expanded=true]:min-h-20',
               COMPOSER_DROP_FADE_CLASS,
               dragActive && COMPOSER_DROP_ACTIVE_CLASS
             )}
@@ -696,7 +702,7 @@ export const UserEditComposer: FC<UserEditComposerProps> = ({ cwd, gateway, sess
             </button>
           </div>
         </div>
-      </StickyHumanMessageContainer>
+      </HumanMessageRow>
     </ComposerPrimitive.Root>
   )
 }
