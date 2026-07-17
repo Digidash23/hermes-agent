@@ -27,7 +27,10 @@ const rowMinH = 'min-h-[1.625rem]'
 const rowPadX = 'pl-1 pr-1'
 const rowGap = 'gap-1.5'
 const rowLead = 'grid size-3.5 shrink-0 place-items-center'
-const rowInset = cn(rowPadX, rowGap, 'flex h-full min-w-0 items-center self-stretch py-0.5')
+// flex-1: SidebarRowShell switched from grid to flex (actions is an overlay
+// now, not a reserved column), so this needs to claim the row's full width
+// explicitly instead of inheriting it from a minmax(0,1fr) grid track.
+const rowInset = cn(rowPadX, rowGap, 'flex h-full min-w-0 flex-1 items-center self-stretch py-0.5')
 
 // Fade instead of an ellipsis: overflow clips normally, but a mask gradient
 // over the LAST 24px (fixed pixels, not a % of width) fades any clipped text
@@ -49,7 +52,14 @@ export function SidebarRowNest({ className, ...props }: React.ComponentProps<'di
   return <SidebarRowStack className={cn('pb-1 pl-4', className)} {...props} />
 }
 
-/** Outer grid — sole owner of row height. */
+/** Outer row container — sole owner of row height. `actions` no longer
+ *  reserves a permanent grid column (that cost every row ~22px of always-
+ *  empty space to its right, even when nothing was hovering) — it's an
+ *  absolutely-positioned overlay instead, hidden until hover/focus/an open
+ *  menu. No backdrop of its own: it relies on the row's OWN native :hover
+ *  background (the `row-hover` utility / --ui-row-hover-background, applied
+ *  by each row type to its own root) already covering the full row width,
+ *  text included, so the overlay just needs to appear on top of that. */
 export function SidebarRowShell({
   actions,
   children,
@@ -57,9 +67,13 @@ export function SidebarRowShell({
   ...props
 }: React.ComponentProps<'div'> & { actions?: React.ReactNode }) {
   return (
-    <div className={cn(rowMinH, 'grid grid-cols-[minmax(0,1fr)_auto] items-stretch rounded-md', className)} {...props}>
+    <div className={cn(rowMinH, 'relative flex items-stretch rounded-md', className)} {...props}>
       {children}
-      {actions ? <div className="flex shrink-0 items-center self-center">{actions}</div> : null}
+      {actions ? (
+        <div className="pointer-events-none absolute inset-y-0 right-1 z-2 flex items-center opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100 [&:has([data-state=open])]:opacity-100">
+          <div className="pointer-events-auto flex items-center">{actions}</div>
+        </div>
+      ) : null}
     </div>
   )
 }
