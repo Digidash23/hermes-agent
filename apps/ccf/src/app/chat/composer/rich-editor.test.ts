@@ -58,6 +58,17 @@ describe('normalizeComposerEditorDom', () => {
     expect(composerPlainText(editor)).toBe('@file:`src/foo.ts`')
     expect(editor.querySelector('br')).toBeNull()
   })
+
+  it('unwraps multiple sibling block fragments Chromium can split typed text across, with no separator inserted', () => {
+    const editor = document.createElement('div')
+    editor.dataset.slot = RICH_INPUT_SLOT
+    editor.innerHTML = '<div>tes</div><div>tin</div><div>g</div>'
+
+    normalizeComposerEditorDom(editor)
+
+    expect(composerPlainText(editor)).toBe('testing')
+    expect(editor.querySelector(':scope > div')).toBeNull()
+  })
 })
 
 describe('insertInlineRefsIntoEditor', () => {

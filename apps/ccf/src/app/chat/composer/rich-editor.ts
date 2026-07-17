@@ -337,13 +337,30 @@ export function normalizeComposerEditorDom(editor: HTMLElement) {
     editor.removeChild(tailBlock)
   }
 
-  // Unwrap a lone block wrapper back to inline content.
-  if (editor.childNodes.length === 1 && editor.firstChild?.nodeType === Node.ELEMENT_NODE) {
-    const wrapper = editor.firstChild as HTMLElement
-
-    if ((wrapper.tagName === 'DIV' || wrapper.tagName === 'P') && wrapper.dataset.slot !== RICH_INPUT_SLOT) {
-      editor.replaceChildren(...Array.from(wrapper.childNodes))
+  // Unwrap any stray block wrapper(s) back to inline content — Chromium can
+  // fragment freshly-typed text across MULTIPLE sibling <div>s mid-word (not
+  // just wrap everything in one), and this editor's own rendering never
+  // produces top-level DIV/P children itself (text nodes + <br> + chips
+  // only, per the note above), so any block found here is always
+  // fragmentation junk, never an intentional paragraph. Unwrapped with
+  // nothing inserted between them — the split was never a real line break,
+  // so concatenating their contents back-to-back restores exactly what was
+  // typed (composerPlainText would otherwise read each block as its own
+  // line via a trailing \n, e.g. "testing" fragmented into three <div>s
+  // rendering as three separate lines in the sent message).
+  for (const child of Array.from(editor.childNodes)) {
+    if (
+      child.nodeType !== Node.ELEMENT_NODE ||
+      ((child as HTMLElement).tagName !== 'DIV' && (child as HTMLElement).tagName !== 'P') ||
+      (child as HTMLElement).dataset.slot === RICH_INPUT_SLOT
+    ) {
+      continue
     }
+
+    const wrapper = child as HTMLElement
+    const fragment = document.createDocumentFragment()
+    fragment.append(...Array.from(wrapper.childNodes))
+    editor.replaceChild(fragment, wrapper)
   }
 
   // A trailing <br> right after a chip / only whitespace is a phantom line.
