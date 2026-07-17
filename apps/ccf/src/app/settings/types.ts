@@ -11,6 +11,7 @@ export type SettingsView =
   | 'keys'
   | 'notifications'
   | 'plugins'
+  | 'profiles'
   | 'providers'
   | 'sessions'
   | `config:${string}`

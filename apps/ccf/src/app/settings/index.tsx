@@ -18,6 +18,7 @@ import {
   RefreshCw,
   Settings2,
   Upload,
+  Users,
   Wrench,
   Zap
 } from '@/lib/icons'
@@ -38,6 +39,7 @@ import { KeybindSettings } from './keybind-settings'
 import { KEYS_VIEWS, KeysSettings, type KeysView } from './keys-settings'
 import { NotificationsSettings } from './notifications-settings'
 import { PluginsSettings } from './plugins-settings'
+import { ProfilesSettings } from './profiles-settings'
 import { PROVIDER_VIEWS, ProvidersSettings, type ProviderView } from './providers-settings'
 import { SessionsSettings } from './sessions-settings'
 import type { SettingsPageProps, SettingsView as SettingsViewId } from './types'
@@ -50,6 +52,7 @@ const SETTINGS_VIEWS: readonly SettingsViewId[] = [
   'keys',
   'notifications',
   'plugins',
+  'profiles',
   'sessions',
   'about'
 ]
@@ -219,6 +222,13 @@ export function SettingsView({ onClose, onConfigSaved, onMainModelChanged }: Set
       onSelect: () => setActiveView('plugins')
     },
     {
+      active: activeView === 'profiles',
+      icon: Users,
+      id: 'profiles',
+      label: t.profiles.title,
+      onSelect: () => setActiveView('profiles')
+    },
+    {
       active: activeView === 'sessions',
       icon: Archive,
       id: 'sessions',
@@ -295,6 +305,8 @@ export function SettingsView({ onClose, onConfigSaved, onMainModelChanged }: Set
             <NotificationsSettings />
           ) : activeView === 'plugins' ? (
             <PluginsSettings />
+          ) : activeView === 'profiles' ? (
+            <ProfilesSettings />
           ) : (
             <SessionsSettings />
           )}
