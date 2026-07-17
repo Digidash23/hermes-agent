@@ -325,6 +325,20 @@ export interface Translations {
       colorModeDesc: string
       toolViewTitle: string
       toolViewDesc: string
+      composerLayoutTitle: string
+      composerLayoutDesc: string
+      composerLayoutCompact: string
+      composerLayoutUnified: string
+      transcriptTextSizeTitle: string
+      transcriptTextSizeDesc: string
+      transcriptTextSizeSmall: string
+      transcriptTextSizeMedium: string
+      transcriptTextSizeLarge: string
+      transcriptWidthTitle: string
+      transcriptWidthDesc: string
+      transcriptWidthNarrow: string
+      transcriptWidthMedium: string
+      transcriptWidthWide: string
       uiScaleTitle: string
       uiScaleDesc: (percent: number) => string
       translucencyTitle: string

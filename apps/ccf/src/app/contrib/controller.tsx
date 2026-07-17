@@ -7,6 +7,7 @@ import { PALETTE_AREA, type PaletteContribution } from '@/app/command-palette/co
 import { CcfSidebarResizeHandle, useCcfSidebarWidth } from '@/app/shell/ccf-sidebar-resize'
 import { SessionTitleLabel } from '@/app/shell/session-title-label'
 import { type StatusbarItem } from '@/app/shell/statusbar-controls'
+import { TranscriptAppearanceEffect } from '@/app/shell/transcript-appearance-effect'
 import { group, split } from '@/components/pane-shell/tree/model'
 import { LayoutTreeRoot } from '@/components/pane-shell/tree/renderer'
 import type { DoubleTapContext } from '@/components/pane-shell/tree/renderer/drag-session'
@@ -598,6 +599,7 @@ export function ContribController() {
       style={{ '--sidebar-width': '100%' } as CSSProperties}
     >
       <ContribWiring>
+        <TranscriptAppearanceEffect />
         <div
           className="relative flex h-screen min-h-0 w-screen flex-col bg-(--ui-bg-chrome) p-2 text-(--ui-text-primary)"
           style={{ '--titlebar-height': '0px' } as CSSProperties}

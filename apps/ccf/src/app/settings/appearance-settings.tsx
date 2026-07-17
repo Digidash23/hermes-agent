@@ -13,9 +13,18 @@ import { selectableCardClass } from '@/lib/selectable-card'
 import { normalize } from '@/lib/text'
 import { cn } from '@/lib/utils'
 import { $backdrop, setBackdrop } from '@/store/backdrop'
+import { $composerLayoutStyle, type ComposerLayoutStyle, setComposerLayoutStyle } from '@/store/composer-layout'
 import { $embedAllowed, $embedMode, clearEmbedAllowed, type EmbedMode, setEmbedMode } from '@/store/embed-consent'
 import { $activeGatewayProfile, $profiles, normalizeProfileKey } from '@/store/profile'
 import { $toolViewMode, setToolViewMode } from '@/store/tool-view'
+import {
+  $transcriptTextSize,
+  $transcriptWidth,
+  setTranscriptTextSize,
+  setTranscriptWidth,
+  type TranscriptTextSize,
+  type TranscriptWidth
+} from '@/store/transcript-appearance'
 import { $translucency, setTranslucency } from '@/store/translucency'
 import { $zoomPercent, setZoomPercent } from '@/store/zoom'
 import { getBaseColors, useTheme } from '@/themes/context'
@@ -245,6 +254,9 @@ export function AppearanceSettings() {
   const { t, isSavingLocale } = useI18n()
   const { themeName, mode, resolvedMode, availableThemes, setTheme, setMode } = useTheme()
   const toolViewMode = useStore($toolViewMode)
+  const composerLayoutStyle = useStore($composerLayoutStyle)
+  const transcriptTextSize = useStore($transcriptTextSize)
+  const transcriptWidth = useStore($transcriptWidth)
   const zoomPercent = useStore($zoomPercent)
   const embedMode = useStore($embedMode)
   const embedAllowed = useStore($embedAllowed)
@@ -286,6 +298,23 @@ export function AppearanceSettings() {
     { id: 'product', label: a.product },
     { id: 'technical', label: a.technical }
   ] as const
+
+  const composerLayoutOptions = [
+    { id: 'split', label: a.composerLayoutCompact },
+    { id: 'unified', label: a.composerLayoutUnified }
+  ] as const satisfies readonly { id: ComposerLayoutStyle; label: string }[]
+
+  const transcriptTextSizeOptions = [
+    { id: 'small', label: a.transcriptTextSizeSmall },
+    { id: 'medium', label: a.transcriptTextSizeMedium },
+    { id: 'large', label: a.transcriptTextSizeLarge }
+  ] as const satisfies readonly { id: TranscriptTextSize; label: string }[]
+
+  const transcriptWidthOptions = [
+    { id: 'narrow', label: a.transcriptWidthNarrow },
+    { id: 'medium', label: a.transcriptWidthMedium },
+    { id: 'wide', label: a.transcriptWidthWide }
+  ] as const satisfies readonly { id: TranscriptWidth; label: string }[]
 
   const embedOptions = [
     { id: 'ask', label: a.embedsAsk },
@@ -485,6 +514,55 @@ export function AppearanceSettings() {
             description={a.toolViewDesc}
             title={a.toolViewTitle}
           />
+
+          <ListRow
+            action={
+              <SegmentedControl
+                onChange={id => {
+                  triggerHaptic('selection')
+                  setComposerLayoutStyle(id)
+                }}
+                options={composerLayoutOptions}
+                value={composerLayoutStyle}
+              />
+            }
+            description={a.composerLayoutDesc}
+            title={a.composerLayoutTitle}
+          />
+
+          {composerLayoutStyle === 'split' && (
+            <>
+              <ListRow
+                action={
+                  <SegmentedControl
+                    onChange={id => {
+                      triggerHaptic('selection')
+                      setTranscriptTextSize(id)
+                    }}
+                    options={transcriptTextSizeOptions}
+                    value={transcriptTextSize}
+                  />
+                }
+                description={a.transcriptTextSizeDesc}
+                title={a.transcriptTextSizeTitle}
+              />
+
+              <ListRow
+                action={
+                  <SegmentedControl
+                    onChange={id => {
+                      triggerHaptic('selection')
+                      setTranscriptWidth(id)
+                    }}
+                    options={transcriptWidthOptions}
+                    value={transcriptWidth}
+                  />
+                }
+                description={a.transcriptWidthDesc}
+                title={a.transcriptWidthTitle}
+              />
+            </>
+          )}
 
           <ListRow
             action={

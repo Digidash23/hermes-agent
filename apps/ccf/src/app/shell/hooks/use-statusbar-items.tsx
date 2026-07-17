@@ -3,7 +3,6 @@ import { useMemo } from 'react'
 
 import type { CommandCenterSection } from '@/app/command-center'
 import { $terminalTakeover, setTerminalTakeover } from '@/app/right-sidebar/store'
-import { useApprovalModeStatusbarItem } from '@/app/shell/approval-mode-menu'
 import { ContextUsagePanel } from '@/app/shell/context-usage-panel'
 import { GatewayMenuPanel } from '@/app/shell/gateway-menu-panel'
 import { Codicon } from '@/components/ui/codicon'
@@ -15,7 +14,6 @@ import { contextBarLabel, LiveDuration, usageContextLabel } from '@/lib/statusba
 import { cn } from '@/lib/utils'
 import { copyFilePath, revealFile } from '@/store/file-actions'
 import { revealFileInTree } from '@/store/layout'
-import { $activeGatewayProfile } from '@/store/profile'
 import {
   $activeSessionId,
   $busy,
@@ -87,7 +85,6 @@ export function useStatusbarItems({
   const copy = t.shell.statusbar
   const fileMenu = t.fileMenu
   const primaryActiveSessionId = useStore($activeSessionId)
-  const activeGatewayProfile = useStore($activeGatewayProfile)
   const terminalTakeover = useStore($terminalTakeover)
   const primaryBusy = useStore($busy)
   const currentCwd = useStore($currentCwd)
@@ -137,7 +134,6 @@ export function useStatusbarItems({
 
   const contextUsage = useMemo(() => usageContextLabel(currentUsage), [currentUsage])
   const contextBar = useMemo(() => contextBarLabel(currentUsage), [currentUsage])
-  const approvalModeItem = useApprovalModeStatusbarItem(activeGatewayProfile, requestGateway)
 
   const gatewayMenuContent = useMemo(
     () => (close: () => void) => (
@@ -440,10 +436,6 @@ export function useStatusbarItems({
         variant: 'text'
       },
       {
-        ...approvalModeItem,
-        hidden: gatewayState !== 'open'
-      },
-      {
         actionId: 'view.showTerminal',
         className: `w-7 justify-center px-0${terminalTakeover ? ' bg-accent/55 text-foreground' : ''}`,
         // Trimmed from the default statusbar — still reachable via ⌘K
@@ -460,7 +452,6 @@ export function useStatusbarItems({
     ],
     [
       activeSessionId,
-      approvalModeItem,
       backendVersionItem,
       clientVersionItem,
       contextBar,
@@ -469,7 +460,6 @@ export function useStatusbarItems({
       currentUsage,
       requestGateway,
       sessionStartedAt,
-      gatewayState,
       terminalTakeover,
       turnStartedAt
     ]

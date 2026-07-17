@@ -12,6 +12,7 @@ import { DATA_IMAGE_URL_RE } from '@/lib/embedded-images'
 import { triggerHaptic } from '@/lib/haptics'
 import { cn } from '@/lib/utils'
 import { browseBackward, browseForward, deriveUserHistory, isBrowsingHistory } from '@/store/composer-input-history'
+import { $composerLayoutStyle } from '@/store/composer-layout'
 import { POPOUT_WIDTH_REM } from '@/store/composer-popout'
 import { removeQueuedPrompt } from '@/store/composer-queue'
 import { toggleReview } from '@/store/review'
@@ -20,6 +21,7 @@ import { $threadScrolledUp } from '@/store/thread-scroll'
 import { $autoSpeakReplies } from '@/store/voice-prefs'
 import { useTheme } from '@/themes'
 
+import { ComposerApprovalModeControl } from './approval-mode-control'
 import { AttachmentList } from './attachments'
 import { COMPOSER_FADE_BACKGROUND, type QueueEditState, slashArgStage } from './composer-utils'
 import { ContextMenu } from './context-menu'
@@ -149,6 +151,7 @@ export function ChatBar({
 
   const { t } = useI18n()
   const gatewayState = useStore($gatewayState)
+  const composerLayoutStyle = useStore($composerLayoutStyle)
   const reconnecting = gatewayState === 'closed' || gatewayState === 'error'
   const inputDisabled = disabled && !reconnecting
 
@@ -209,7 +212,11 @@ export function ChatBar({
 
   const statusStackVisible = queuedPrompts.length > 0 || statusPresent
 
-  const { compactPill, stacked } = useComposerMetrics({ composerRef, composerSurfaceRef, editorRef, poppedOut })
+  const { compactPill, stacked: narrowStacked } = useComposerMetrics({ composerRef, composerSurfaceRef, editorRef, poppedOut })
+  // Unified composer style always shows the two-row layout (input on top,
+  // controls below) regardless of width — same grid the narrow/responsive
+  // case already uses, just forced on instead of measured.
+  const stacked = narrowStacked || composerLayoutStyle === 'unified'
   const hasComposerPayload = hasText || attachments.length > 0
   const canSubmit = busy || hasComposerPayload
   const busyAction = busy && hasComposerPayload ? 'queue' : 'stop'
@@ -997,6 +1004,7 @@ export function ChatBar({
                 >
                   <div className="flex translate-y-[3px] items-start gap-(--composer-control-gap) self-start [grid-area:menu]">
                     {contextMenu}
+                    {!poppedOut && composerLayoutStyle === 'unified' && <ComposerApprovalModeControl />}
                     <ContribSlot area={COMPOSER_AREAS.leading} />
                   </div>
                   <div className="min-w-0 [grid-area:input]">{input}</div>
@@ -1008,6 +1016,11 @@ export function ChatBar({
                 <ContribSlot area={COMPOSER_AREAS.bottom} />
               </div>
             </div>
+            {!poppedOut && composerLayoutStyle === 'split' && (
+              <div className="flex items-center justify-start px-1 pt-0.5">
+                <ComposerApprovalModeControl />
+              </div>
+            )}
           </div>
         </ComposerPrimitive.Root>
       </ComposerPrimitive.Unstable_TriggerPopoverRoot>
