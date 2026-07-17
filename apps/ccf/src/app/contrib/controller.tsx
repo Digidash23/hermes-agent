@@ -5,7 +5,6 @@ import type { CSSProperties, ReactElement, PointerEvent as ReactPointerEvent } f
 import { PREVIEW_RAIL_MAX_WIDTH, PREVIEW_RAIL_MIN_WIDTH } from '@/app/chat/right-rail'
 import { PALETTE_AREA, type PaletteContribution } from '@/app/command-palette/contrib'
 import { type StatusbarItem } from '@/app/shell/statusbar-controls'
-import { toggleLayoutEditMode } from '@/components/pane-shell/edit-mode'
 import { allPaneIds, group, split } from '@/components/pane-shell/tree/model'
 import { LayoutTreeRoot } from '@/components/pane-shell/tree/renderer'
 import type { DoubleTapContext } from '@/components/pane-shell/tree/renderer/drag-session'
@@ -34,7 +33,6 @@ import { registry } from '@/contrib/registry'
 import { discoverRuntimePlugins } from '@/contrib/runtime-loader'
 import { sessionTitle as storedSessionTitle } from '@/lib/chat-runtime'
 import { Brain, Clock, Command, LayoutDashboard, Terminal } from '@/lib/icons'
-import { type KeybindContribution, KEYBINDS_AREA } from '@/lib/keybinds/actions'
 import { Codecs, persistentAtom } from '@/lib/persisted'
 import {
   $fileBrowserOpen,
@@ -243,31 +241,15 @@ registry.registerMany([
   // Titlebar center stays empty on purpose: session title lives in tabs +
   // sidebar; place/cwd lives in the sidebar project tree. Center is drag
   // chrome (plugins can still contribute to titleBar.center if needed).
-  // Layout edit mode registers through the SAME declarative surfaces plugins
-  // use: a rebindable keybind (collision-checked in the panel) + a ⌘K row
-  // whose hotkey hint tracks the live binding.
-  {
-    id: 'layout.editMode',
-    area: KEYBINDS_AREA,
-    data: {
-      id: 'layout.editMode',
-      label: 'Toggle layout edit mode',
-      defaults: ['mod+shift+\\'],
-      run: toggleLayoutEditMode
-    } satisfies KeybindContribution
-  },
-  {
-    id: 'layout.editMode',
-    area: PALETTE_AREA,
-    data: {
-      id: 'layout.editMode',
-      label: 'Toggle layout edit mode',
-      action: 'layout.editMode',
-      icon: LayoutDashboard,
-      keywords: ['layout', 'zones', 'panes', 'edit', 'rearrange'],
-      run: toggleLayoutEditMode
-    } satisfies PaletteContribution
-  },
+  //
+  // Layout edit mode (drag-rearrange panes) is removed for CCF — it's a
+  // dev/power-user capability, not something the target (beginner) audience
+  // needs, and dropping it is what unblocks giving the sidebar its own
+  // bespoke chrome later instead of treating it as just another
+  // interchangeable pane-tree zone. toggleLayoutEditMode/ZoneEditor stay in
+  // the codebase (upstream feature, untouched) — just no longer reachable
+  // from CCF's titlebar, keybinds, or ⌘K.
+  //
   // The agent's write -> see loop: rescan <hermes home>/desktop-plugins
   // without relaunching (same-id reloads dispose the previous incarnation).
   {
