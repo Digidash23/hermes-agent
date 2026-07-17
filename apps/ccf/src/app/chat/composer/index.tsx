@@ -45,6 +45,7 @@ import { useComposerUrlDialog } from './hooks/use-composer-url-dialog'
 import { useComposerVoice } from './hooks/use-composer-voice'
 import { useSlashCompletions } from './hooks/use-slash-completions'
 import { useSessionStatusPresence } from './hooks/use-status-presence'
+import { ModelPill } from './model-pill'
 import { QueuePanel } from './queue-panel'
 import {
   composerPlainText,
@@ -725,6 +726,7 @@ export function ChatBar({
       }}
       disabled={disabled}
       hasComposerPayload={hasComposerPayload}
+      hideModelPill={!poppedOut && composerLayoutStyle === 'split'}
       onDictate={dictate}
       onSteer={steerDraft}
       onToggleAutoSpeak={handleToggleAutoSpeak}
@@ -1017,8 +1019,9 @@ export function ChatBar({
               </div>
             </div>
             {!poppedOut && composerLayoutStyle === 'split' && (
-              <div className="flex items-center justify-start px-1 pt-0.5">
+              <div className="flex items-center justify-between px-1 pt-0.5">
                 <ComposerApprovalModeControl />
+                <ModelPill compact={compactPill} disabled={disabled} model={state.model} />
               </div>
             )}
           </div>

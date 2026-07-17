@@ -48,6 +48,7 @@ export function ComposerControls({
   conversation,
   disabled,
   hasComposerPayload,
+  hideModelPill = false,
   state,
   voiceStatus,
   onDictate,
@@ -63,6 +64,10 @@ export function ComposerControls({
   conversation: ConversationProps
   disabled: boolean
   hasComposerPayload: boolean
+  /** Pro composer style renders the model pill in its own row below the
+   *  card instead (see composer/index.tsx) — skip it here to avoid showing
+   *  it twice. */
+  hideModelPill?: boolean
   state: ChatBarState
   voiceStatus: VoiceStatus
   onDictate: () => void
@@ -89,7 +94,7 @@ export function ComposerControls({
 
   return (
     <div className="ml-auto flex shrink-0 items-center gap-(--composer-control-gap)">
-      <ModelPill compact={compactModelPill} disabled={disabled} model={state.model} />
+      {!hideModelPill && <ModelPill compact={compactModelPill} disabled={disabled} model={state.model} />}
       {/* While the agent runs and the user is typing, steer takes over the mic's
           slot rather than crowding the row with an extra button. */}
       {canSteer ? (
