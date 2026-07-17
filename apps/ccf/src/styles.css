@@ -368,7 +368,7 @@
     --composer-ring-strength: 1;
     --composer-surface-pad-x: 0.5rem;
     --composer-surface-pad-y: 0.3125rem;
-    --composer-input-min-height: 1.625rem;
+    --composer-input-min-height: 2rem;
     --composer-input-max-height: 9.375rem;
     --composer-input-inline-min-width: 8rem;
     --composer-fallback-height: 2.75rem;
