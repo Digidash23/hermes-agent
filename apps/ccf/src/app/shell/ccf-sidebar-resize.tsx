@@ -73,7 +73,7 @@ export function CcfSidebarResizeHandle({ side }: { side: 'left' | 'right' }) {
       onPointerDown={onPointerDown}
       role="separator"
     >
-      <span className="absolute inset-y-0 left-1/2 w-px -translate-x-1/2 bg-transparent transition-colors group-hover:bg-(--ui-sash-hover-border)" />
+      <span className="absolute left-1/2 top-1/2 h-14 w-1.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-transparent transition-colors group-hover:bg-(--ui-sash-hover-border)" />
     </div>
   )
 }
