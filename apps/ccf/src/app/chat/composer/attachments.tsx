@@ -36,6 +36,10 @@ function AttachmentPill({ attachment, onRemove }: { attachment: ComposerAttachme
   const hasUploadError = attachment.uploadState === 'error'
   const canPreview = attachment.kind !== 'folder' && attachment.kind !== 'terminal' && !isUploading
   const detail = attachment.detail && attachment.detail !== attachment.label ? attachment.detail : undefined
+  // Images speak for themselves — a bigger thumbnail with no filename/path
+  // underneath, vs. the icon + name + path treatment other attachment kinds
+  // still need (a folder or URL has nothing to visually preview).
+  const isImagePreview = Boolean(attachment.previewUrl) && attachment.kind === 'image'
 
   async function openPreview() {
     if (!canPreview) {
@@ -83,7 +87,8 @@ function AttachmentPill({ attachment, onRemove }: { attachment: ComposerAttachme
           aria-busy={isUploading || undefined}
           aria-label={canPreview ? c.previewLabel(attachment.label) : attachment.label}
           className={cn(
-            'flex max-w-56 items-center gap-2 rounded-2xl border bg-background/50 px-2 py-1.5 text-left shadow-[inset_0_1px_0_rgba(255,255,255,0.18)] transition-colors disabled:cursor-default',
+            'flex max-w-56 items-center gap-2 rounded-2xl border bg-background/50 text-left shadow-[inset_0_1px_0_rgba(255,255,255,0.18)] transition-colors disabled:cursor-default',
+            isImagePreview ? 'p-1' : 'px-2 py-1.5',
             hasUploadError
               ? 'border-destructive/45 hover:border-destructive/60'
               : 'border-border/60 hover:border-primary/35 hover:bg-accent/45'
@@ -92,7 +97,12 @@ function AttachmentPill({ attachment, onRemove }: { attachment: ComposerAttachme
           onClick={() => void openPreview()}
           type="button"
         >
-          <span className="relative grid size-8 shrink-0 place-items-center overflow-hidden rounded-lg border border-border/55 bg-muted/35 text-muted-foreground">
+          <span
+            className={cn(
+              'relative grid shrink-0 place-items-center overflow-hidden rounded-lg border border-border/55 bg-muted/35 text-muted-foreground',
+              isImagePreview ? 'size-14' : 'size-8'
+            )}
+          >
             {attachment.previewUrl && attachment.kind === 'image' ? (
               <img
                 alt={attachment.label}
@@ -114,21 +124,23 @@ function AttachmentPill({ attachment, onRemove }: { attachment: ComposerAttachme
               </span>
             )}
           </span>
-          <span className="min-w-0">
-            <span className="block truncate text-[0.72rem] font-medium leading-4 text-foreground/90">
-              {attachment.label}
-            </span>
-            {detail && (
-              <span
-                className={cn(
-                  'block truncate text-[0.62rem] leading-3.5',
-                  hasUploadError ? 'text-destructive/80' : 'text-muted-foreground/65'
-                )}
-              >
-                {detail}
+          {!isImagePreview && (
+            <span className="min-w-0">
+              <span className="block truncate text-[0.72rem] font-medium leading-4 text-foreground/90">
+                {attachment.label}
               </span>
-            )}
-          </span>
+              {detail && (
+                <span
+                  className={cn(
+                    'block truncate text-[0.62rem] leading-3.5',
+                    hasUploadError ? 'text-destructive/80' : 'text-muted-foreground/65'
+                  )}
+                >
+                  {detail}
+                </span>
+              )}
+            </span>
+          )}
         </button>
         {onRemove && (
           <button
