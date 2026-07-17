@@ -29,12 +29,12 @@ export function AccountRail() {
     >
       <span
         aria-hidden="true"
-        className="grid size-6 shrink-0 place-items-center rounded-full text-[0.6875rem] font-semibold uppercase leading-none"
+        className="grid size-5 shrink-0 place-items-center rounded-full text-[0.625rem] font-semibold uppercase leading-none"
         style={{ backgroundColor: profileColorSoft(hue, 28), color: hue }}
       >
         {ACCOUNT_NAME.charAt(0)}
       </span>
-      <span className="flex min-w-0 flex-1 items-center gap-1.5 text-[0.8125rem] text-(--ui-text-secondary)">
+      <span className="flex min-w-0 flex-1 items-center gap-1 text-[0.8125rem] text-(--ui-text-secondary)">
         <span className="truncate font-medium text-foreground">{ACCOUNT_NAME}</span>
         <span className="text-(--ui-text-quaternary)">·</span>
         <span className="truncate">{ACCOUNT_ROLE}</span>

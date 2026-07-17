@@ -24,11 +24,17 @@ export function SidebarCount({ children }: { children: React.ReactNode }) {
 // on the shell grid, or short clusters (projects) float 1–2px off sessions.
 
 const rowMinH = 'min-h-[1.625rem]'
-const rowPadX = 'pl-2 pr-1'
+const rowPadX = 'pl-1 pr-1'
 const rowGap = 'gap-1.5'
 const rowLead = 'grid size-3.5 shrink-0 place-items-center'
 const rowInset = cn(rowPadX, rowGap, 'flex h-full min-w-0 items-center self-stretch py-0.5')
-const rowLabel = 'min-w-0 truncate text-[0.8125rem] leading-none text-(--ui-text-secondary)'
+
+// Fade instead of an ellipsis: overflow clips normally, but a mask gradient
+// over the LAST 24px (fixed pixels, not a % of width) fades any clipped text
+// to transparent. Short titles that never reach that zone render untouched —
+// the mask only affects glyphs that are actually there.
+const rowLabel =
+  'min-w-0 overflow-hidden whitespace-nowrap text-[0.8125rem] leading-none text-(--ui-text-secondary) [-webkit-mask-image:linear-gradient(to_right,black_calc(100%-24px),transparent_100%)] [mask-image:linear-gradient(to_right,black_calc(100%-24px),transparent_100%)]'
 
 /** Codicon size in sidebar row leads — matches the file tree (`tree.tsx`). */
 export const SIDEBAR_LEAD_ICON_SIZE = '0.875rem' as const

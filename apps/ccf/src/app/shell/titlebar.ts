@@ -5,8 +5,16 @@ export const MACOS_TRAFFIC_LIGHTS_HEIGHT = 14
 export const TITLEBAR_ICON_SIZE = 12
 export const TITLEBAR_CONTROL_OFFSET_X = 74
 export const TITLEBAR_CONTROL_HEIGHT = 22
-export const TITLEBAR_CONTROLS_TOP = (TITLEBAR_HEIGHT - TITLEBAR_CONTROL_HEIGHT) / 2
-export const TITLEBAR_FALLBACK_WINDOW_BUTTON_X = 24
+// CCF's floating-sidebar chrome insets everything by a p-2 (8px) void margin
+// (see contrib/controller.tsx) — the TOP offset (computed independently of
+// windowButtonPosition) still needs that +8 so it lands inside the sidebar
+// card's header instead of the void above it. X is handled differently: it
+// comes straight from Electron's WINDOW_BUTTON_POSITION.x (electron/main.ts),
+// deliberately pulled IN toward the void's edge, not pushed further right.
+export const FLOATING_CHROME_INSET = 8
+export const TITLEBAR_CONTROLS_TOP = (TITLEBAR_HEIGHT - TITLEBAR_CONTROL_HEIGHT) / 2 + FLOATING_CHROME_INSET
+// Matches WINDOW_BUTTON_POSITION.x in electron/main.ts.
+export const TITLEBAR_FALLBACK_WINDOW_BUTTON_X = 15
 // Edge inset used when no left-side native controls take up that space —
 // Windows/Linux (native overlay is on the right) and macOS fullscreen
 // (traffic lights are hidden). Matches the right-cluster's 0.75rem padding.

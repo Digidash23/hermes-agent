@@ -436,10 +436,16 @@ const BOOT_FAKE_STEP_MS = (() => {
 const APP_NAME = process.env.HERMES_DESKTOP_APP_NAME || 'CCF'
 const TITLEBAR_HEIGHT = 34
 const MACOS_TRAFFIC_LIGHTS_HEIGHT = 14
+// CCF's floating-sidebar chrome insets everything by a p-2 (8px) void margin
+// (see contrib/controller.tsx) — the Y axis still needs that shift so the
+// lights land inside the sidebar card's header instead of the void above it.
+// X stays close to the void's own edge (not stacked on top of the original
+// 24px macOS default) — pushed left, not right, into the card.
+const FLOATING_CHROME_INSET = 8
 
 const WINDOW_BUTTON_POSITION = {
-  x: 24,
-  y: TITLEBAR_HEIGHT / 2 - MACOS_TRAFFIC_LIGHTS_HEIGHT / 2
+  x: 15,
+  y: TITLEBAR_HEIGHT / 2 - MACOS_TRAFFIC_LIGHTS_HEIGHT / 2 + FLOATING_CHROME_INSET
 }
 
 // Right-edge window-control reservation lives in titlebar-overlay-width.ts

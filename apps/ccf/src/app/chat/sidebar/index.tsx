@@ -33,7 +33,6 @@ import { $cronJobs } from '@/store/cron'
 import { $bindings } from '@/store/keybinds'
 import {
   $dismissedAutoProjectIds,
-  $panesFlipped,
   $pinnedSessionIds,
   $sidebarAgentsGrouped,
   $sidebarCronOpen,
@@ -286,7 +285,6 @@ export function ChatSidebar({
     [navContributions]
   )
 
-  const panesFlipped = useStore($panesFlipped)
   const agentsGrouped = useStore($sidebarAgentsGrouped)
   const pinnedSessionIds = useStore($pinnedSessionIds)
   const pinsOpen = useStore($sidebarPinsOpen)
@@ -1086,19 +1084,31 @@ export function ChatSidebar({
     )
 
   return (
+    // CCF-bespoke floating card: the sidebar lives OUTSIDE the pane tree now
+    // (see contrib/controller.tsx), so none of the tree's seam-invariant CSS
+    // (which zeroes borders/radius on [data-slot=sidebar] inside
+    // [data-tree-group]) applies here — full rounding/border render for real.
     <Sidebar
       className={cn(
-        // Visibility is the layout tree's job (a hidden zone is display:none;
-        // the narrow overlay renders the live instance) — the sidebar always
-        // paints itself fully.
-        'relative h-full min-w-0 overflow-hidden border-t-0 border-b-0 text-foreground transition-none',
-        panesFlipped ? 'border-l border-r-0' : 'border-r border-l-0',
-        'border-(--sidebar-edge-border) bg-(--ui-sidebar-surface-background) opacity-100'
+        'relative h-full min-w-0 overflow-hidden rounded-3xl border text-foreground transition-none',
+        'border-(--sidebar-edge-border) opacity-100',
+        // Same glass fill as the chat composer's input surface — the
+        // composer's own --composer-fill var only resolves inside
+        // [data-slot='composer-root'], so this replicates its formula
+        // (color-mix against --dt-card at 72%) directly rather than
+        // inheriting the :root fallback, which is a different (more opaque)
+        // mix. See the "Composer fill" comment block in styles.css.
+        'bg-[color-mix(in_srgb,var(--dt-card)_72%,transparent)]',
+        'backdrop-blur-[0.75rem] backdrop-saturate-[1.12] [-webkit-backdrop-filter:blur(0.75rem)_saturate(1.12)]'
       )}
       collapsible="none"
     >
-      <SidebarContent className="gap-0 overflow-hidden bg-transparent px-2.5">
-        <SidebarGroup className="shrink-0 p-0 pb-2 pt-[calc(var(--titlebar-height)+0.375rem)]">
+      <SidebarContent className="gap-0 overflow-hidden bg-transparent px-1.5">
+        {/* Real 34px clearance for the traffic-light row (now floating,
+            absolute, over this card's top edge — see contrib/controller.tsx)
+            — not the shared --titlebar-height var, which stays zeroed
+            globally for the (unrelated, tree-internal) chat pane header. */}
+        <SidebarGroup className="shrink-0 p-0 pb-2 pt-[2.625rem]">
           <SidebarGroupContent>
             <SidebarMenu className="gap-px">
               {[...SIDEBAR_NAV, ...contributedNav].map(item => {
@@ -1413,7 +1423,7 @@ export function ChatSidebar({
 
         {!showSessionSections && <SidebarBlankState onNewProject={openProjectCreate} />}
 
-        <div className="-mx-2.5 shrink-0 border-t border-(--sidebar-edge-border) px-2.5 pb-1 pt-1.5">
+        <div className="-mx-1.5 shrink-0 border-t border-(--sidebar-edge-border) px-1.5 pb-1.5 pt-1.5">
           <AccountRail />
         </div>
       </SidebarContent>

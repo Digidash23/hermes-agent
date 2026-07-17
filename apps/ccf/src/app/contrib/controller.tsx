@@ -4,18 +4,18 @@ import type { CSSProperties, ReactElement, PointerEvent as ReactPointerEvent } f
 
 import { PREVIEW_RAIL_MAX_WIDTH, PREVIEW_RAIL_MIN_WIDTH } from '@/app/chat/right-rail'
 import { PALETTE_AREA, type PaletteContribution } from '@/app/command-palette/contrib'
+import { CcfSidebarResizeHandle, useCcfSidebarWidth } from '@/app/shell/ccf-sidebar-resize'
+import { SessionTitleLabel } from '@/app/shell/session-title-label'
 import { type StatusbarItem } from '@/app/shell/statusbar-controls'
-import { allPaneIds, group, split } from '@/components/pane-shell/tree/model'
+import { group, split } from '@/components/pane-shell/tree/model'
 import { LayoutTreeRoot } from '@/components/pane-shell/tree/renderer'
 import type { DoubleTapContext } from '@/components/pane-shell/tree/renderer/drag-session'
 import {
-  $layoutTree,
   bindTreeSideVisibility,
   declareDefaultTree,
   dismissTreePane,
   dockPaneBeside,
   markCollapsePane,
-  mirrorLayoutTree,
   paneRootSide,
   registerLayoutResetHandler,
   registerPaneCloser,
@@ -42,9 +42,7 @@ import {
   FILE_BROWSER_MAX_WIDTH,
   FILE_BROWSER_MIN_WIDTH,
   setFileBrowserOpen,
-  setSidebarOpen,
-  SIDEBAR_DEFAULT_WIDTH,
-  SIDEBAR_MAX_WIDTH
+  setSidebarOpen
 } from '@/store/layout'
 import { $filePreviewTarget, $previewTarget, closeRightRail } from '@/store/preview'
 import { $reviewOpen, closeReview, REVIEW_PANE_ID } from '@/store/review'
@@ -122,24 +120,6 @@ const workspaceTabDrag = (event: ReactPointerEvent<HTMLElement>, onTap: () => vo
 }
 
 registry.registerMany([
-  {
-    id: 'sessions',
-    area: 'panes',
-    title: 'sessions',
-    // Collapsible: leaves the grid on narrow viewports (edge overlay instead).
-    // dock: where a RE-ADOPTED pane lands (healed from a stale dismissal) —
-    // its default-ish spot beside main, not a random same-placement stack.
-    data: {
-      placement: 'left',
-      collapsible: true,
-      dock: { pane: 'workspace', pos: 'left' },
-      revealAliases: ['chat-sidebar'],
-      width: `${SIDEBAR_DEFAULT_WIDTH}px`,
-      minWidth: `${SIDEBAR_DEFAULT_WIDTH}px`,
-      maxWidth: `${SIDEBAR_MAX_WIDTH}px`
-    },
-    render: () => <WiredPane part="sidebar" />
-  },
   {
     id: 'workspace',
     area: 'panes',
@@ -351,10 +331,12 @@ registry.registerMany([
 // zones collapse to nothing while their pane is hidden (no target / ⌘G off).
 // This static spot is just the seed — dockPaneBeside keeps preview adjacent
 // to files WHEREVER files moves (see the target listeners below).
+// 'sessions' (the sidebar) is CCF-bespoke chrome now, not a pane-tree zone —
+// see the CcfSidebar wrapper in ContribController — so none of these trees
+// reference it anymore.
 const DEFAULT_TREE = split(
   'row',
   [
-    group(['sessions'], { id: 'grp-sessions' }),
     group(['workspace'], { id: 'grp-main' }),
     split(
       'column',
@@ -375,20 +357,16 @@ const DEFAULT_TREE = split(
       'spl-right'
     )
   ],
-  [1, 3.4, 1.25],
+  [3.4, 1.25],
   'spl-root'
 )
 
-const FOCUS_TREE = split(
-  'row',
-  [group(['sessions']), group(['workspace', 'files', 'preview', 'review', 'terminal'])],
-  [1, 4.6]
-)
+const FOCUS_TREE = group(['workspace', 'files', 'preview', 'review', 'terminal'])
 
 const TERMINAL_TREE = split(
   'column',
   [
-    split('row', [group(['sessions']), group(['workspace']), group(['files', 'preview', 'review'])], [1, 3.2, 1.2]),
+    split('row', [group(['workspace']), group(['files', 'preview', 'review'])], [3.2, 1.2]),
     group(['terminal'])
   ],
   [3, 1]
@@ -397,7 +375,7 @@ const TERMINAL_TREE = split(
 const QUAD_TREE = split(
   'column',
   [
-    split('row', [group(['sessions', 'files']), group(['workspace'])], [1, 3]),
+    split('row', [group(['files']), group(['workspace'])], [1, 3]),
     split('row', [group(['terminal']), group(['preview', 'review', 'logs'])], [1.4, 1])
   ],
   [3, 1]
@@ -505,45 +483,20 @@ function bindPaneCollapse(
   registerPaneOpener(paneId, open)
 }
 
-// SIDES have one source of truth: the TREE. The legacy $panesFlipped flag is
-// DERIVED from where the sessions zone actually sits (TitlebarControls maps
-// its left/right buttons through it), so dragging sessions across — or
-// applying a mirrored preset — remaps the buttons automatically. The flip
-// action (⌘\ / titlebar) mirrors the tree only when they disagree.
-const sessionsOnRight = () => {
-  const tree = $layoutTree.get()
-
-  if (!tree) {
-    return null
-  }
-
-  const order = allPaneIds(tree)
-  const sessions = order.indexOf('sessions')
-  const main = order.indexOf('workspace')
-
-  return sessions >= 0 && main >= 0 ? sessions > main : null
-}
-
-$layoutTree.subscribe(() => {
-  const flipped = sessionsOnRight()
-
-  if (flipped !== null && flipped !== $panesFlipped.get()) {
-    $panesFlipped.set(flipped)
-  }
-})
-
-$panesFlipped.listen(flipped => {
-  const current = sessionsOnRight()
-
-  if (current !== null && current !== flipped) {
-    mirrorLayoutTree()
-  }
-})
-
-// POSITIONAL side toggles (titlebar buttons, ⌘B / ⌘J): $sidebarOpen ≙ the
-// LEFT side of the main zone, $fileBrowserOpen ≙ the RIGHT — everything on
-// that side hides together, whatever panes have been rearranged there.
-bindTreeSideVisibility('left', $sidebarOpen, setSidebarOpen)
+// The sidebar is bespoke CCF chrome now, outside the pane tree entirely (see
+// ContribController) — $panesFlipped/$sidebarOpen drive its side/visibility
+// directly via plain conditional rendering, no tree syncing needed anymore
+// (the old sessionsOnRight()-based sync — deriving $panesFlipped from where
+// 'sessions' sat in the tree — is gone: 'sessions' can never appear in
+// allPaneIds() again, so that sync was permanently inert dead code once the
+// tree registration was removed).
+//
+// POSITIONAL side toggle (titlebar button, ⌘J): $fileBrowserOpen ≙ the RIGHT
+// side of the main zone — everything on that side hides together, whatever
+// panes have been rearranged there. (The equivalent LEFT-side binding for
+// $sidebarOpen is gone too — binding it to "hide the tree's left side" would
+// now incorrectly collapse the workspace/chat pane, since sessions no longer
+// occupies that side at all.)
 bindTreeSideVisibility('right', $fileBrowserOpen, setFileBrowserOpen)
 
 // Workspace-scoped surfaces: the file tree and git diff only mean something
@@ -599,14 +552,13 @@ registry.register({
   } satisfies PaletteContribution
 })
 
-// Sessions/files Close = collapse their SIDE (⌘B/⌘J truthful, titlebar button
-// flips back) — but only while the pane actually lives in that root side
-// column. Dragged next to main, a side collapse can't hide it (the collapse
-// skips main-bearing children), so Close falls back to dismissal there —
-// otherwise ⌘W/Close silently no-op.
-registerPaneCloser('sessions', () =>
-  paneRootSide('sessions') === 'left' ? setSidebarOpen(false) : dismissTreePane('sessions')
-)
+// Files Close = collapse its side (⌘J truthful, titlebar button flips back)
+// — but only while the pane actually lives in that root side column. Dragged
+// next to main, a side collapse can't hide it (the collapse skips
+// main-bearing children), so Close falls back to dismissal there —
+// otherwise ⌘W/Close silently no-op. (Sessions/the sidebar no longer has an
+// entry here — it's bespoke chrome outside the tree now, closed directly via
+// setSidebarOpen, never dismissed as a tree pane.)
 registerPaneCloser('files', () =>
   paneRootSide('files') === 'right' ? setFileBrowserOpen(false) : dismissTreePane('files')
 )
@@ -628,6 +580,15 @@ $filePreviewTarget.listen(target => target && revealPreview())
 
 export function ContribController() {
   const sidebarOpen = useStore($sidebarOpen)
+  const panesFlipped = useStore($panesFlipped)
+  const sidebarWidth = useCcfSidebarWidth()
+
+  const sidebar = sidebarOpen ? (
+    <div className="relative h-full shrink-0" style={{ width: `${sidebarWidth}px` }}>
+      <WiredPane part="sidebar" />
+      <CcfSidebarResizeHandle side={panesFlipped ? 'left' : 'right'} />
+    </div>
+  ) : null
 
   return (
     <SidebarProvider
@@ -638,11 +599,14 @@ export function ContribController() {
     >
       <ContribWiring>
         <div
-          className="flex h-screen min-h-0 w-screen flex-col bg-(--ui-bg-chrome) text-(--ui-text-primary)"
+          className="relative flex h-screen min-h-0 w-screen flex-col bg-(--ui-bg-chrome) p-2 text-(--ui-text-primary)"
           style={{ '--titlebar-height': '0px' } as CSSProperties}
         >
-          {/* Title bar: fixed chrome outside the grid, composable via slots.
-              Layout contract (no contribution can break it):
+          {/* Title bar: floating chrome, absolutely positioned over the void
+              (not a flex sibling anymore — see the pt-[34px] below, which
+              replaces the space it used to claim by pushing the tree down).
+              Composable via slots. Layout contract (no contribution can
+              break it):
                 - a full-bar DRAG BASE underneath (pointer-events-none, like
                   AppShell's drag strips) — everywhere without content drags
                   the window;
@@ -652,7 +616,7 @@ export function ContribController() {
                   tree-published --workspace-left/right vars (pure CSS, no rect
                   threading), clamped to clear the REAL TitlebarControls
                   clusters (fixed, z-70); center is truly window-centered. */}
-          <div className="relative flex h-[34px] shrink-0 items-center border-b border-(--ui-stroke-tertiary) text-xs">
+          <div className="absolute inset-x-0 top-0 z-30 flex h-[34px] items-center text-xs">
             {/* Drag strips, AppShell-style: cut to AVOID the fixed control
                 clusters instead of overlapping them — Electron's no-drag
                 carve-out of fixed/transformed elements is unreliable, so a
@@ -667,12 +631,20 @@ export function ContribController() {
               aria-hidden="true"
               className="pointer-events-none absolute inset-y-0 left-[calc(var(--titlebar-controls-left,14px)+(var(--titlebar-control-size,1.25rem)*2)+0.75rem)] right-[calc(var(--titlebar-tools-right,0.75rem)+var(--titlebar-tools-width,5.5rem)+0.75rem)] [-webkit-app-region:drag]"
             />
+            {/* fixed + top-(--titlebar-controls-top), h-(--titlebar-control-height) —
+                the EXACT same positioning/box-height TitlebarControls' own
+                icon buttons use (see shell/titlebar-controls.tsx), not an
+                independent absolute+items-center guess. translate-y-0.5
+                matches the LEFT cluster specifically (sidebar toggle) —
+                it carries that extra 2px shift the RIGHT cluster doesn't. */}
             <div
-              className="pointer-events-auto absolute z-10 flex w-max items-center gap-2 [-webkit-app-region:no-drag]"
+              className="pointer-events-auto fixed z-10 flex h-(--titlebar-control-height) w-max translate-y-0.5 items-center gap-2 [-webkit-app-region:no-drag]"
               style={{
-                left: 'max(calc(var(--workspace-left, 0px) + 0.5rem), calc(var(--titlebar-controls-left, 14px) + 2 * var(--titlebar-control-size, 1.25rem) + 1rem))'
+                left: 'max(calc(var(--workspace-left, 0px) + 0.5rem), calc(var(--titlebar-controls-left, 14px) + 2 * var(--titlebar-control-size, 1.25rem) + 1rem))',
+                top: 'var(--titlebar-controls-top, 6px)'
               }}
             >
+              <SessionTitleLabel />
               <Slot area="titleBar.left" />
             </div>
             <div className="pointer-events-auto absolute left-1/2 top-1/2 z-10 flex w-max -translate-x-1/2 -translate-y-1/2 items-center gap-2 [-webkit-app-region:no-drag]">
@@ -689,7 +661,20 @@ export function ContribController() {
             </div>
           </div>
 
-          <LayoutTreeRoot />
+          {/* CCF-bespoke sidebar sits beside the pane tree, not inside it —
+              own floating card, own header clearance (pt-[34px] below
+              matches the titlebar strip's height, replacing what doc-flow
+              used to give the tree for free when the strip was a sibling
+              instead of an absolute overlay). $panesFlipped only reorders
+              these two flex children now; it no longer syncs against tree
+              pane order (see the removed sessionsOnRight() sync above). */}
+          <div className="relative flex min-h-0 flex-1 gap-2">
+            {!panesFlipped && sidebar}
+            <div className="relative flex min-h-0 flex-1 flex-col pt-[34px]">
+              <LayoutTreeRoot />
+            </div>
+            {panesFlipped && sidebar}
+          </div>
 
           {/* "Close running tab?" — the busy/input-blocked tile close gate. */}
           <SessionTileCloseConfirm />
