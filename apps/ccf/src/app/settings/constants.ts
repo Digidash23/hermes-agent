@@ -501,6 +501,12 @@ export const FIELD_DESCRIPTIONS: Record<string, string> = defineFieldCopy({
 // Curated desktop config surface: only fields a user might tune from the app.
 export const SECTIONS: DesktopConfigSection[] = [
   {
+    id: 'appearance',
+    label: 'Appearance',
+    icon: Palette,
+    keys: []
+  },
+  {
     id: 'model',
     label: 'Model',
     icon: Box,
@@ -511,12 +517,6 @@ export const SECTIONS: DesktopConfigSection[] = [
     label: 'Chat',
     icon: MessageCircle,
     keys: ['display.personality', 'timezone', 'display.show_reasoning', 'agent.image_input_mode']
-  },
-  {
-    id: 'appearance',
-    label: 'Appearance',
-    icon: Palette,
-    keys: []
   },
   {
     id: 'workspace',

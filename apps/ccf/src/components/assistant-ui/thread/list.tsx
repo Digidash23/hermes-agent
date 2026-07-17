@@ -123,6 +123,12 @@ const ThreadMessageListInner: FC<ThreadMessageListProps> = ({
   })
 
   const [renderBudget, setRenderBudget] = useState(RENDER_BUDGET)
+  // Top fade only kicks in once something is actually scrolled above the
+  // viewport — at rest on a fresh/short session there's nothing hidden up
+  // there, so the very first message would otherwise render dimmed for no
+  // reason. Mirrors useToolWindow's syncFade in tool/fallback.tsx.
+  const [topFaded, setTopFaded] = useState(false)
+  const syncTopFade = useCallback(() => setTopFaded((scrollRef.current?.scrollTop ?? 0) > 4), [scrollRef])
 
   // Walk turns newest-first, summing their part weights until the budget is met;
   // everything before that first kept turn is hidden.
@@ -145,9 +151,15 @@ const ThreadMessageListInner: FC<ThreadMessageListProps> = ({
   // still sit in the top-left, so reserve the titlebar gap above the transcript.
   const secondaryWindow = isSecondaryWindow()
 
+  // max(): --titlebar-height is 0 in contrib-zone content (the shared zone
+  // titlebar sits outside this component), which would otherwise collapse
+  // this to 0 — flush against the scroll edge, so the top fade (2rem, see
+  // aui_thread-viewport's mask in styles.css) has no blank space to ease
+  // through before biting into the first message's own text. 2.5rem keeps a
+  // safety margin past the fade zone so it always completes in blank space.
   const threadContentTopPad = secondaryWindow
     ? 'pt-[calc(var(--titlebar-height)+0.75rem)]'
-    : 'pt-[calc(var(--titlebar-height)-0.5rem)]'
+    : 'pt-[max(2.5rem,calc(var(--titlebar-height)-0.5rem))]'
 
   useEffect(() => setThreadAtBottom(isAtBottom), [isAtBottom])
   useEffect(() => () => resetThreadScroll(), [])
@@ -284,6 +296,8 @@ const ThreadMessageListInner: FC<ThreadMessageListProps> = ({
         className="size-full overflow-x-hidden overflow-y-auto overscroll-contain"
         data-following={isAtBottom ? 'true' : 'false'}
         data-slot="aui_thread-viewport"
+        data-top-faded={topFaded ? 'true' : 'false'}
+        onScroll={syncTopFade}
         ref={scrollRef as React.RefCallback<HTMLDivElement>}
       >
         {renderEmpty ? (

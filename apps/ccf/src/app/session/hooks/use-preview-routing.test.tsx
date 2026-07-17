@@ -1,4 +1,4 @@
-import { act, cleanup, render, waitFor } from '@testing-library/react'
+import { act, cleanup, render } from '@testing-library/react'
 import { useEffect, useRef } from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
@@ -83,7 +83,7 @@ describe('usePreviewRouting', () => {
     window.localStorage.clear()
   })
 
-  it('opens the active session preview from the registry', async () => {
+  it('does not auto-open a registered session preview when its session becomes active', async () => {
     const target = previewTarget('/work/demo.html')
 
     registerSessionPreview('session-1', target, 'tool-result')
@@ -95,9 +95,7 @@ describe('usePreviewRouting', () => {
       />
     )
 
-    await waitFor(() => {
-      expect($previewTarget.get()).toEqual({ ...target, renderMode: 'preview' })
-    })
+    expect($previewTarget.get()).toBeNull()
   })
 
   it('does not infer previews from assistant prose', async () => {

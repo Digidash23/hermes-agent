@@ -1003,20 +1003,24 @@ text-* variant utilities. */ .btn-arc {
 
 /* Stick-to-bottom owns scrollTop while following. Once escaped, native anchoring
    is safe and keeps sticky human edits from shoving the viewport; data-editing
-   enables that path before React swaps in the inline editor.
-   The mask fades the top edge so messages scrolling up ease out under the
-   titlebar instead of hard-clipping at its border — the reserved top padding
-   on aui_thread-content already keeps the very first message clear of this
-   zone when scrolled all the way up. */
+   enables that path before React swaps in the inline editor. */
 [data-slot='aui_thread-viewport'] {
-  -webkit-mask-image: linear-gradient(to bottom, transparent 0, black 2rem, black 100%);
-  mask-image: linear-gradient(to bottom, transparent 0, black 2rem, black 100%);
   overflow-anchor: none;
 }
 
 [data-slot='aui_thread-viewport'][data-following='false'],
 [data-slot='aui_thread-viewport'][data-editing='true'] {
   overflow-anchor: auto;
+}
+
+/* Top fade, gated on data-top-faded (list.tsx: scrollTop > 4px) so it only
+   ever shows once something is actually scrolled above the viewport — a
+   fixed/unconditional mask here fades the very first message on every short
+   or fresh session, since there's nothing above it to justify the fade.
+   Mirrors .tool-group-scroll--faded's same gating for the tool-call window. */
+[data-slot='aui_thread-viewport'][data-top-faded='true'] {
+  -webkit-mask-image: linear-gradient(to bottom, transparent 0, black 2rem, black 100%);
+  mask-image: linear-gradient(to bottom, transparent 0, black 2rem, black 100%);
 }
 
 [data-slot='aui_thread-content'] {

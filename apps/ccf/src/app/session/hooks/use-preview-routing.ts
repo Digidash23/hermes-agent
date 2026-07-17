@@ -1,13 +1,10 @@
-import { useStore } from '@nanostores/react'
 import { type MutableRefObject, useCallback, useEffect } from 'react'
 
 import { gatewayEventCompletedFileDiff } from '@/lib/gateway-events'
 import {
   $previewTarget,
-  $sessionPreviewRegistry,
   beginPreviewServerRestart,
   completePreviewServerRestart,
-  getSessionPreviewRecord,
   progressPreviewServerRestart,
   requestPreviewReload,
   setPreviewTarget
@@ -48,24 +45,15 @@ export function usePreviewRouting({
   routedSessionId,
   selectedStoredSessionId
 }: PreviewRoutingOptions) {
-  const previewRegistry = useStore($sessionPreviewRegistry)
   const previewSessionId = activePreviewSessionId(activeSessionIdRef, routedSessionId, selectedStoredSessionId)
 
-  // Restore a *user-opened* preview when its session becomes active. Tool
-  // results no longer auto-register/open a preview — the inline preview card in
-  // the tool row is the only entry point, so HTML artifacts never pop the rail
-  // open on their own.
+  // Clear any open preview when leaving chat view or switching sessions —
+  // it no longer auto-restores a session's last-opened preview, which forced
+  // the rail back open every time that session became active again (on
+  // send, on click, on relaunch) even after the user had moved on from it.
   useEffect(() => {
-    if (currentView !== 'chat' || !previewSessionId) {
-      setPreviewTarget(null)
-
-      return
-    }
-
-    const record = getSessionPreviewRecord(previewSessionId)
-
-    setPreviewTarget(record?.normalized ?? null)
-  }, [currentView, previewRegistry, previewSessionId])
+    setPreviewTarget(null)
+  }, [currentView, previewSessionId])
 
   const restartPreviewServer = useCallback(
     async (url: string, context?: string) => {
