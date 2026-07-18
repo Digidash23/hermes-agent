@@ -15,7 +15,6 @@ import { browseBackward, browseForward, deriveUserHistory, isBrowsingHistory } f
 import { $composerLayoutStyle } from '@/store/composer-layout'
 import { POPOUT_WIDTH_REM } from '@/store/composer-popout'
 import { removeQueuedPrompt } from '@/store/composer-queue'
-import { toggleReview } from '@/store/review'
 import { $gatewayState } from '@/store/session'
 import { $threadScrolledUp } from '@/store/thread-scroll'
 import { $autoSpeakReplies } from '@/store/voice-prefs'
@@ -951,7 +950,6 @@ export function ChatBar({
                 onBranchOff={handleBranchOff}
                 onConvertBranch={handleConvertBranch}
                 onListBranches={handleListBranches}
-                onOpen={toggleReview}
                 onOpenWorktree={openInWorktree}
                 onSwitchBranch={handleSwitchBranch}
                 repoPath={cwd}

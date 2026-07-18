@@ -15,14 +15,12 @@ import {
   bindTreeSideVisibility,
   declareDefaultTree,
   dismissTreePane,
-  dockPaneBeside,
   markCollapsePane,
   paneRootSide,
   registerLayoutResetHandler,
   registerPaneCloser,
   registerPaneOpener,
   resetLayoutTree,
-  revealTreePane,
   setPaneCollapsed,
   setTreePaneHidden,
   watchContributedPanes
@@ -45,8 +43,7 @@ import {
   setFileBrowserOpen,
   setSidebarOpen
 } from '@/store/layout'
-import { $filePreviewTarget, $previewTarget, closeRightRail } from '@/store/preview'
-import { $reviewOpen, closeReview, REVIEW_PANE_ID } from '@/store/review'
+import { REVIEW_PANE_ID } from '@/store/review'
 import { $currentCwd, $selectedStoredSessionId, $sessions, sessionMatchesStoredId } from '@/store/session'
 
 import type { SessionDragPayload } from '../chat/composer/inline-refs'
@@ -512,12 +509,10 @@ const $hasWorkspace = computed($currentCwd, cwd => Boolean(cwd.trim()))
 // defaults closed). "Reveal in Sidebar" already goes through this same store
 // (revealFileInTree calls setFileBrowserOpen(true)), so that path is unaffected.
 bindPaneVisibility('files', $fileBrowserOpen)
-// ⌘G — the review sidebar appears/disappears (and comes to the front).
-bindPaneVisibility(
-  'review',
-  computed([$reviewOpen, $hasWorkspace], (open, workspace) => open && workspace),
-  closeReview
-)
+// Review (git diff) is hidden from CCF, same as files/preview — permanently
+// hidden rather than bound to $reviewOpen, since that's a persisted atom that
+// could still read true from before this pane was hidden (an old ⌘G toggle).
+setTreePaneHidden('review', true)
 // ⌃` / statusbar toggle — the terminal COLLAPSES to a rail (tab stays), not
 // hides; PTYs stay alive while collapsed (see PersistentTerminal).
 bindPaneCollapse(
@@ -527,15 +522,10 @@ bindPaneCollapse(
   () => setTerminalTakeover(true)
 )
 
-// Preview EXISTS only while something is previewed (old-shell semantics:
-// closing the last preview tab closes the pane; a new target opens + fronts
-// it). Same visibility binding as every other self-managed surface, driven
-// by the live targets instead of a toggle.
-const $previewVisible = computed([$previewTarget, $filePreviewTarget], (target, fileTarget) =>
-  Boolean(target || fileTarget)
-)
-
-bindPaneVisibility('preview', $previewVisible, closeRightRail)
+// Preview (the file-content/URL preview rail) is hidden from CCF, same as
+// files/review — permanently hidden rather than reactively bound to the live
+// preview targets, so it never pops open regardless of what sets them.
+setTreePaneHidden('preview', true)
 
 // Logs are optional chrome: off by default, toggled from ⌘K, persisted.
 const $logsOpen = persistentAtom('hermes.desktop.logsOpen', false, Codecs.bool)
@@ -567,19 +557,6 @@ registry.register({
 registerPaneCloser('files', () =>
   paneRootSide('files') === 'right' ? setFileBrowserOpen(false) : dismissTreePane('files')
 )
-
-// A preview target lands NEXT TO the file tree — position-aware: wherever
-// files currently lives (default rail, ⌘\-flipped, dragged into a stack), the
-// preview zone docks directly beside it. A user who drags the preview pane
-// somewhere pins it there instead (until a preset/reset). Then reveal: open
-// the side, unhide, front — a NEW target while already visible still fronts.
-const revealPreview = () => {
-  dockPaneBeside('preview', 'files')
-  revealTreePane('preview')
-}
-
-$previewTarget.listen(target => target && revealPreview())
-$filePreviewTarget.listen(target => target && revealPreview())
 
 // ---------------------------------------------------------------------------
 

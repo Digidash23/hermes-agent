@@ -98,10 +98,10 @@ export const KEYBIND_ACTIONS: readonly KeybindActionMeta[] = [
 
   // ── View (layout + appearance + the shortcuts panel itself) ───────────────
   { id: 'view.toggleSidebar', category: 'view', defaults: ['mod+b'] },
+  // Files/review (the coding-tool side panels) are hidden from CCF — ⌘J now
+  // falls back straight to its terminal-toggle behavior instead of opening
+  // the files pane. See use-keybinds.ts.
   { id: 'view.toggleRightSidebar', category: 'view', defaults: ['mod+j'] },
-  // ⌘G — "g" for git; the review pane is the source-control view.
-  { id: 'view.toggleReview', category: 'view', defaults: ['mod+g'] },
-  { id: 'view.showFiles', category: 'view', defaults: [] },
   // Control+` everywhere (literal `ctrl`, NOT `mod`): ⌘` is macOS-reserved for
   // cycling app windows, so VS Code/Cursor/Zed bind the terminal to Ctrl+` on
   // every platform. Off macOS `ctrl` folds to `mod` (= Ctrl), so it's unchanged.
