@@ -4750,10 +4750,11 @@ function installPreviewShortcut(window) {
   })
 }
 
-// Zoom level is persisted in the renderer's own localStorage (per-origin,
-// survives reloads/restarts) rather than a main-process JSON file. The main
-// process owns setZoomLevel, so we mirror each change into localStorage and
-// read it back on did-finish-load to re-apply after reloads or crash recovery.
+// Zoom's primary store is a main-process JSON file. The renderer localStorage
+// mirror lives under Electron's cache/storage folders, which crash recovery
+// can move or recreate — wiping the zoom setting exactly when the user just
+// recovered from a crash. JSON survives; localStorage is kept as a secondary
+// mirror so pre-JSON installs migrate transparently on first read.
 import {
   applyZoomLevel,
   installZoomReassertOnWindowEvents,
@@ -4763,6 +4764,28 @@ import {
   zoomWiringForWindowKind
 } from './zoom'
 
+const DESKTOP_ZOOM_STATE_PATH = path.join(app.getPath('userData'), 'zoom-state.json')
+
+function readZoomState() {
+  try {
+    const raw = JSON.parse(fs.readFileSync(DESKTOP_ZOOM_STATE_PATH, 'utf8'))
+    const level = Number(raw?.zoomLevel)
+
+    return Number.isFinite(level) ? level : null
+  } catch {
+    return null
+  }
+}
+
+function writeZoomState(zoomLevel) {
+  try {
+    fs.mkdirSync(path.dirname(DESKTOP_ZOOM_STATE_PATH), { recursive: true })
+    writeFileAtomic(DESKTOP_ZOOM_STATE_PATH, JSON.stringify({ zoomLevel }, null, 2))
+  } catch (error) {
+    rememberLog(`[zoom] json persist failed: ${error?.message || error}`)
+  }
+}
+
 function setAndPersistZoomLevel(window, zoomLevel) {
   if (!window || window.isDestroyed()) {
     return
@@ -4771,6 +4794,7 @@ function setAndPersistZoomLevel(window, zoomLevel) {
   // Apply + notify in one funnel so the settings UI stays in sync, including
   // changes made via the keyboard shortcuts or the View menu.
   const next = applyZoomLevel(window.webContents, zoomLevel)
+  writeZoomState(next)
   window.webContents
     .executeJavaScript(
       `try { localStorage.setItem(${JSON.stringify(ZOOM_STORAGE_KEY)}, ${JSON.stringify(String(next))}) } catch {}`
@@ -4783,6 +4807,19 @@ function restorePersistedZoomLevel(window) {
     return
   }
 
+  // JSON is the primary store — read it synchronously so a crash before the
+  // renderer settles still restores. applyZoomLevel notifies the renderer so
+  // the Appearance UI Scale control can't drift out of sync.
+  const saved = readZoomState()
+
+  if (saved != null) {
+    applyZoomLevel(window.webContents, saved)
+
+    return
+  }
+
+  // Fall back to localStorage for installs that predate zoom-state.json,
+  // then migrate the value into the JSON store.
   window.webContents
     .executeJavaScript(
       `(() => { try { return localStorage.getItem(${JSON.stringify(ZOOM_STORAGE_KEY)}) } catch { return null } })()`
@@ -4792,9 +4829,8 @@ function restorePersistedZoomLevel(window) {
         return
       }
 
-      // Notify the renderer too — otherwise the Appearance UI Scale control
-      // can stay stuck at 100% even though the window zoom was restored.
-      applyZoomLevel(window.webContents, Number(stored))
+      const applied = applyZoomLevel(window.webContents, Number(stored))
+      writeZoomState(applied)
     })
     .catch(error => rememberLog(`[zoom] restore failed: ${error?.message || error}`))
 }
@@ -4824,6 +4860,16 @@ function installZoomShortcuts(window) {
       event.preventDefault()
       setAndPersistZoomLevel(window, window.webContents.getZoomLevel() - ZOOM_STEP)
     }
+  })
+
+  // Ctrl/Cmd + mouse wheel — the standard desktop/browser zoom gesture.
+  // Chromium surfaces it as the main-process 'zoom-changed' event (no
+  // renderer wheel listener or preload IPC needed). Routes through the same
+  // persist+notify funnel as the keyboard shortcuts, so wheel zoom survives
+  // restarts and the settings Scale control stays in sync.
+  window.webContents.on('zoom-changed', (event, zoomDirection) => {
+    const delta = zoomDirection === 'in' ? ZOOM_STEP : -ZOOM_STEP
+    setAndPersistZoomLevel(window, window.webContents.getZoomLevel() + delta)
   })
 }
 
@@ -6988,11 +7034,15 @@ function wireCommonWindowHandlers(win, { zoom = true }: { zoom?: boolean } = {})
 
   if (zoom) {
     installZoomShortcuts(win)
-    // Re-apply persisted zoom on show/restore/cross-display move (Windows can
-    // drop webContents zoom after minimize or a monitor-scale change) and on
-    // first load (reloads / crash recovery).
+    // Re-apply persisted zoom on show/restore/resize/cross-display move
+    // (Chromium can drop webContents zoom after these window transitions) and
+    // on every completed load — not just the first, since a later full load
+    // in the same webContents (crash-recovery reload, manual reload, an
+    // in-place navigation landing on a fresh per-host zoom entry) would
+    // otherwise come up at default zoom while the settings Scale control
+    // still showed the persisted percentage.
     installZoomReassertOnWindowEvents(win, () => restorePersistedZoomLevel(win))
-    win.webContents.once('did-finish-load', () => restorePersistedZoomLevel(win))
+    win.webContents.on('did-finish-load', () => restorePersistedZoomLevel(win))
   }
 
   installContextMenu(win)
@@ -7300,6 +7350,9 @@ function createWindow() {
   mainWindow.once('ready-to-show', () => {
     if (mainWindow && !mainWindow.isDestroyed()) {
       mainWindow.show()
+      // Persist geometry as soon as the window is visible so a crash before
+      // the first clean resize/move/close still captures the restored bounds.
+      schedulePersistWindowState()
     }
   })
 
