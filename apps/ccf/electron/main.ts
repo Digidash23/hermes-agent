@@ -5,6 +5,7 @@ import http from 'node:http'
 import https from 'node:https'
 import os from 'node:os'
 import path from 'node:path'
+import tls from 'node:tls'
 import { pathToFileURL } from 'node:url'
 
 import {
@@ -154,6 +155,7 @@ import {
   shouldRelaunchForRendererSandboxCrashLoop,
   writeSandboxMarker
 } from './windows-sandbox-fallback'
+import { installWindowsSystemCaTrust } from './windows-system-ca'
 import { readWindowsUserEnvVar } from './windows-user-env'
 import { isPackagedInstallPath as isPackagedInstallPathUnderRoots } from './workspace-cwd'
 import { readWslWindowsClipboardImage } from './wsl-clipboard-image'
@@ -9360,6 +9362,16 @@ app.on('open-url', (event, url) => {
 })
 
 app.whenReady().then(() => {
+  const systemCa = installWindowsSystemCaTrust(tls)
+
+  if (systemCa.applied) {
+    rememberLog(
+      `[tls] trusting ${systemCa.systemCertificateCount} Windows system CA certificate(s) for backend connections`
+    )
+  } else if (systemCa.error) {
+    rememberLog(`[tls] could not load Windows system CA certificates: ${systemCa.error}`)
+  }
+
   if (IS_MAC) {
     Menu.setApplicationMenu(buildApplicationMenu())
   } else {
