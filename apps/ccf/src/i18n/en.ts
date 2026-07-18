@@ -321,7 +321,8 @@ export const en: Translations = {
       archivedChats: 'Archived Chats',
       about: 'About',
       notifications: 'Notifications',
-      plugins: 'Plugins'
+      plugins: 'Plugins',
+      billing: 'Billing'
     },
     plugins: {
       title: 'Desktop plugins',
@@ -336,6 +337,10 @@ export const en: Translations = {
       failed: 'failed',
       empty: 'No desktop plugins installed yet.',
       kinds: { bundled: 'bundled', disk: 'on disk', runtime: 'runtime' }
+    },
+    billing: {
+      title: 'Billing',
+      blurb: "We're still building this out. Plan and payment management will land here once it's ready."
     },
     notifications: {
       title: 'Notifications',

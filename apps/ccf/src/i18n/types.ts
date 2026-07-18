@@ -282,6 +282,7 @@ export interface Translations {
       about: string
       notifications: string
       plugins: string
+      billing: string
     }
     plugins: {
       title: string
@@ -295,6 +296,10 @@ export interface Translations {
       failed: string
       empty: string
       kinds: { bundled: string; disk: string; runtime: string }
+    }
+    billing: {
+      title: string
+      blurb: string
     }
     notifications: {
       title: string

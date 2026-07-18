@@ -8,6 +8,7 @@ import { useI18n } from '@/i18n'
 import { triggerHaptic } from '@/lib/haptics'
 import {
   Archive,
+  BarChart3,
   Bell,
   Download,
   Globe,
@@ -32,6 +33,7 @@ import { SKILLS_ROUTE } from '../routes'
 
 import { AboutSettings } from './about-settings'
 import { AppearanceSettings } from './appearance-settings'
+import { BillingSettings } from './billing-settings'
 import { ConfigSettings } from './config-settings'
 import { SECTIONS } from './constants'
 import { GatewaySettings } from './gateway-settings'
@@ -54,6 +56,7 @@ const SETTINGS_VIEWS: readonly SettingsViewId[] = [
   'plugins',
   'profiles',
   'sessions',
+  'billing',
   'about'
 ]
 
@@ -236,8 +239,15 @@ export function SettingsView({ onClose, onConfigSaved, onMainModelChanged }: Set
       onSelect: () => setActiveView('sessions')
     },
     {
-      active: activeView === 'about',
+      active: activeView === 'billing',
       gapBefore: true,
+      icon: BarChart3,
+      id: 'billing',
+      label: t.settings.nav.billing,
+      onSelect: () => setActiveView('billing')
+    },
+    {
+      active: activeView === 'about',
       icon: Info,
       id: 'about',
       label: t.settings.nav.about,
@@ -307,6 +317,8 @@ export function SettingsView({ onClose, onConfigSaved, onMainModelChanged }: Set
             <PluginsSettings />
           ) : activeView === 'profiles' ? (
             <ProfilesSettings />
+          ) : activeView === 'billing' ? (
+            <BillingSettings />
           ) : (
             <SessionsSettings />
           )}

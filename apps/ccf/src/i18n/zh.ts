@@ -312,7 +312,8 @@ export const zh: Translations = {
       archivedChats: '已归档对话',
       about: '关于',
       notifications: '通知',
-      plugins: '插件'
+      plugins: '插件',
+      billing: '账单'
     },
     plugins: {
       title: '桌面插件',
@@ -327,6 +328,10 @@ export const zh: Translations = {
       failed: '失败',
       empty: '尚未安装桌面插件。',
       kinds: { bundled: '内置', disk: '磁盘', runtime: '运行时' }
+    },
+    billing: {
+      title: '账单',
+      blurb: '此功能仍在建设中。计划与付款管理功能将在准备就绪后在此提供。'
     },
     notifications: {
       title: '通知',
