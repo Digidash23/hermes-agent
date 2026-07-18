@@ -728,14 +728,19 @@ export function ChatBar({
   )
 
   const input = (
-    <div className={cn('relative', stacked ? 'w-full' : 'min-w-(--composer-input-inline-min-width) flex-1')}>
+    <div
+      className={cn(
+        'relative flex min-h-(--composer-input-min-height) items-center',
+        stacked ? 'w-full' : 'min-w-(--composer-input-inline-min-width) flex-1'
+      )}
+    >
       <div
         aria-disabled={inputDisabled ? true : undefined}
         aria-label={t.composer.message}
         autoCapitalize="off"
         autoCorrect="off"
         className={cn(
-          'min-h-(--composer-input-min-height) max-h-(--composer-input-max-height) cursor-text overflow-y-auto whitespace-pre-wrap break-words [overflow-wrap:anywhere] bg-transparent pb-1 pr-1 pt-1 leading-normal text-foreground outline-none disabled:cursor-not-allowed',
+          'max-h-(--composer-input-max-height) w-full cursor-text overflow-y-auto whitespace-pre-wrap break-words [overflow-wrap:anywhere] bg-transparent pb-1 pr-1 pt-1 leading-normal text-foreground outline-none disabled:cursor-not-allowed',
           'empty:before:content-[attr(data-placeholder)] empty:before:text-muted-foreground/60',
           '**:data-ref-text:cursor-default',
           stacked && 'pl-3',
@@ -987,7 +992,7 @@ export function ChatBar({
                       : 'grid-cols-[auto_1fr_auto] items-center gap-(--composer-control-gap) [grid-template-areas:"menu_input_controls"]'
                   )}
                 >
-                  <div className="flex translate-y-[3px] items-start gap-(--composer-control-gap) self-start [grid-area:menu]">
+                  <div className="flex items-start gap-(--composer-control-gap) self-center [grid-area:menu]">
                     {contextMenu}
                     {!poppedOut && composerLayoutStyle === 'unified' && <ComposerApprovalModeControl />}
                     <ContribSlot area={COMPOSER_AREAS.leading} />
@@ -1002,7 +1007,7 @@ export function ChatBar({
               </div>
             </div>
             {!poppedOut && composerLayoutStyle === 'split' && (
-              <div className="flex items-center justify-between px-1 pt-0.5">
+              <div className="flex items-center justify-between px-1 pt-2">
                 <ComposerApprovalModeControl />
                 <ModelPill compact={compactPill} disabled={disabled} model={state.model} />
               </div>

@@ -12,10 +12,10 @@ export const COMPOSER_STACK_BREAKPOINT_PX = 320
 // pill → stacked.
 export const COMPOSER_COMPACT_PILL_PX = 440
 
-// A single editor line is ~35px (--composer-input-min-height 2rem + 0.5rem
+// A single editor line is ~44px (--composer-input-min-height 2.25rem + 0.5rem
 // vertical padding). Anything taller means the text wrapped to a second line,
 // which is when the composer should expand to the stacked layout.
-export const COMPOSER_SINGLE_LINE_MAX_PX = 42
+export const COMPOSER_SINGLE_LINE_MAX_PX = 46
 
 export const COMPOSER_FADE_BACKGROUND =
   'linear-gradient(to bottom, transparent, color-mix(in srgb, var(--dt-background) 10%, transparent))'

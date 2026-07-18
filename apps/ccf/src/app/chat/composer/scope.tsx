@@ -35,7 +35,10 @@ export interface ComposerScope {
 export const MAIN_COMPOSER_SCOPE: ComposerScope = {
   $awaitingInput: $activeSessionAwaitingInput,
   attachments: mainComposerScope,
-  popoutAllowed: true,
+  // The float/undock gesture lives here (hover grab area + pointer-down
+  // handler are both gated on this flag) — off for now, too easy to trigger
+  // by accident on the composer's own surface. Flip back on to re-enable.
+  popoutAllowed: false,
   readMessages: () => $messages.get(),
   target: 'main'
 }
