@@ -98,22 +98,6 @@ export const KEYBIND_ACTIONS: readonly KeybindActionMeta[] = [
 
   // ── View (layout + appearance + the shortcuts panel itself) ───────────────
   { id: 'view.toggleSidebar', category: 'view', defaults: ['mod+b'] },
-  // Files/review (the coding-tool side panels) are hidden from CCF — ⌘J now
-  // falls back straight to its terminal-toggle behavior instead of opening
-  // the files pane. See use-keybinds.ts.
-  { id: 'view.toggleRightSidebar', category: 'view', defaults: ['mod+j'] },
-  // Control+` everywhere (literal `ctrl`, NOT `mod`): ⌘` is macOS-reserved for
-  // cycling app windows, so VS Code/Cursor/Zed bind the terminal to Ctrl+` on
-  // every platform. Off macOS `ctrl` folds to `mod` (= Ctrl), so it's unchanged.
-  // Toggle reveals the terminal (opening one if none exist); Shift spawns a new one.
-  { id: 'view.showTerminal', category: 'view', defaults: ['ctrl+`'] },
-  { id: 'view.newTerminal', category: 'view', defaults: ['ctrl+shift+`'] },
-  // Same Ctrl(+Shift) terminal family: arrows walk the (vertical) tab rail, W
-  // kills the active one. ⌘W is taken (close preview tab) and ⌘⇧[ ] are profiles,
-  // so these stay on `ctrl` — distinct on macOS, folding to Ctrl elsewhere.
-  { id: 'view.nextTerminal', category: 'view', defaults: ['ctrl+shift+down'] },
-  { id: 'view.prevTerminal', category: 'view', defaults: ['ctrl+shift+up'] },
-  { id: 'view.closeTerminal', category: 'view', defaults: ['ctrl+shift+w'] },
   // ⌘\ — the backslash reads like a mirror line flipping the layout.
   { id: 'view.flipPanes', category: 'view', defaults: ['mod+\\'] },
   // ⌘W closes the focused zone's active tab — its own tab strip (preview) or
@@ -202,7 +186,5 @@ export const KEYBIND_READONLY: readonly KeybindReadonly[] = [
   { id: 'composer.slash', category: 'composer', keys: ['/'] },
   { id: 'composer.help', category: 'composer', keys: ['?'] },
   { id: 'composer.history', category: 'composer', keys: ['up', 'down'] },
-  { id: 'composer.cancel', category: 'composer', keys: ['escape'] },
-  // Fixed, context-local shortcuts surfaced for discoverability.
-  { id: 'view.terminalSelection', category: 'view', keys: ['mod+l'] }
+  { id: 'composer.cancel', category: 'composer', keys: ['escape'] }
 ]

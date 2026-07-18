@@ -2,8 +2,6 @@ import { useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 
 import { closeActiveTab } from '@/app/chat/close-tab'
-import { $terminalTakeover, setTerminalTakeover } from '@/app/right-sidebar/store'
-import { closeActiveTerminal, createTerminal, cycleTerminal } from '@/app/right-sidebar/terminal/terminals'
 import { activateTreeTabSlot, cycleTreeTabInFocusedZone } from '@/components/pane-shell/tree/store'
 import { contributedKeybindHandler, PROFILE_SLOT_COUNT, SESSION_SLOT_COUNT } from '@/lib/keybinds/actions'
 import { comboAllowedInInput, comboFromEvent, isEditableTarget } from '@/lib/keybinds/combo'
@@ -147,22 +145,6 @@ export function useKeybinds(deps: KeybindRuntimeDeps): void {
 
     // Narrow-viewport reveal is handled inside the store toggles now.
     'view.toggleSidebar': toggleSidebarOpen,
-    // Files/review (the coding-tool side panels) are hidden from CCF, so ⌘J
-    // no longer has a "secondary panel" to open — it's just the terminal
-    // toggle now.
-    'view.toggleRightSidebar': () => setTerminalTakeover(!$terminalTakeover.get()),
-    'view.showTerminal': () => setTerminalTakeover(!$terminalTakeover.get()),
-    // Create first so the pane's open-effect ensure sees a non-empty set and
-    // doesn't also spawn one — net effect is exactly one fresh terminal.
-    'view.newTerminal': () => {
-      createTerminal()
-      setTerminalTakeover(true)
-    },
-    // Switch / close only act while the pane is open (no focus-scoping here, so
-    // this stands in for "terminal is showing").
-    'view.nextTerminal': () => $terminalTakeover.get() && cycleTerminal(1),
-    'view.prevTerminal': () => $terminalTakeover.get() && cycleTerminal(-1),
-    'view.closeTerminal': () => $terminalTakeover.get() && closeActiveTerminal(),
     'view.flipPanes': togglePanesFlipped,
     // ⌘W: close the focused tab (terminal / preview target / zone tree tab).
     // On macOS the menu accelerator owns ⌘W and routes through the same

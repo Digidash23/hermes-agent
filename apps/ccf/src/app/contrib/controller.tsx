@@ -1,5 +1,4 @@
 import { useStore } from '@nanostores/react'
-import { computed } from 'nanostores'
 import type { CSSProperties, ReactElement, PointerEvent as ReactPointerEvent } from 'react'
 
 import { PREVIEW_RAIL_MAX_WIDTH, PREVIEW_RAIL_MIN_WIDTH } from '@/app/chat/right-rail'
@@ -12,16 +11,9 @@ import { group, split } from '@/components/pane-shell/tree/model'
 import { LayoutTreeRoot } from '@/components/pane-shell/tree/renderer'
 import type { DoubleTapContext } from '@/components/pane-shell/tree/renderer/drag-session'
 import {
-  bindTreeSideVisibility,
   declareDefaultTree,
-  dismissTreePane,
-  markCollapsePane,
-  paneRootSide,
   registerLayoutResetHandler,
-  registerPaneCloser,
-  registerPaneOpener,
   resetLayoutTree,
-  setPaneCollapsed,
   setTreePaneHidden,
   watchContributedPanes
 } from '@/components/pane-shell/tree/store'
@@ -31,20 +23,17 @@ import { Slot } from '@/contrib/react/slot'
 import { registry } from '@/contrib/registry'
 import { discoverRuntimePlugins } from '@/contrib/runtime-loader'
 import { sessionTitle as storedSessionTitle } from '@/lib/chat-runtime'
-import { Brain, Clock, Command, LayoutDashboard, Terminal } from '@/lib/icons'
-import { Codecs, persistentAtom } from '@/lib/persisted'
+import { Brain, Clock, Command, LayoutDashboard } from '@/lib/icons'
 import {
-  $fileBrowserOpen,
   $panesFlipped,
   $sidebarOpen,
   FILE_BROWSER_DEFAULT_WIDTH,
   FILE_BROWSER_MAX_WIDTH,
   FILE_BROWSER_MIN_WIDTH,
-  setFileBrowserOpen,
   setSidebarOpen
 } from '@/store/layout'
 import { REVIEW_PANE_ID } from '@/store/review'
-import { $currentCwd, $selectedStoredSessionId, $sessions, sessionMatchesStoredId } from '@/store/session'
+import { $selectedStoredSessionId, $sessions, sessionMatchesStoredId } from '@/store/session'
 
 import type { SessionDragPayload } from '../chat/composer/inline-refs'
 import { watchRouteTiles } from '../chat/route-tile'
@@ -55,7 +44,6 @@ import {
   watchSessionTiles,
   WorkspaceTabMenu
 } from '../chat/session-tile'
-import { $terminalTakeover, setTerminalTakeover } from '../right-sidebar/store'
 import { AGENTS_ROUTE, COMMAND_CENTER_ROUTE, CRON_ROUTE } from '../routes'
 import { $workspaceIsPage } from '../routes'
 
@@ -262,9 +250,9 @@ registry.registerMany([
       run: () => window.dispatchEvent(new CustomEvent('hermes:open-keybinds'))
     } satisfies PaletteContribution
   },
-  // Non-statusbar doors for Command Center / Agents / Cron / Terminal — the
-  // statusbar no longer shows these (trimmed to just gateway + approval mode
-  // for a simpler default chrome), so ⌘K is now how they're reached.
+  // Non-statusbar doors for Command Center / Agents / Cron — the statusbar no
+  // longer shows these (trimmed to just gateway + approval mode for a simpler
+  // default chrome), so ⌘K is now how they're reached.
   {
     id: 'commandCenter.open',
     area: PALETTE_AREA,
@@ -302,17 +290,6 @@ registry.registerMany([
       run: () => {
         window.location.hash = CRON_ROUTE
       }
-    } satisfies PaletteContribution
-  },
-  {
-    id: 'terminal.toggle',
-    area: PALETTE_AREA,
-    data: {
-      id: 'terminal.toggle',
-      label: 'Toggle terminal',
-      icon: Terminal,
-      keywords: ['terminal', 'shell', 'console'],
-      run: () => setTerminalTakeover(!$terminalTakeover.get())
     } satisfies PaletteContribution
   }
 ])
@@ -437,49 +414,10 @@ registerLayoutResetHandler(stackSessionTilesIntoMain)
 
 // ---------------------------------------------------------------------------
 // Titlebar chrome toggles -> tree. The TitlebarControls buttons keep their
-// store semantics ($sidebarOpen / $fileBrowserOpen / $panesFlipped); the tree
-// reacts — a hidden pane's zone collapses (content stays mounted), the flip
-// toggle mirrors the root row.
+// store semantics ($sidebarOpen / $panesFlipped); the tree reacts — a hidden
+// pane's zone collapses (content stays mounted), the flip toggle mirrors the
+// root row.
 // ---------------------------------------------------------------------------
-
-function bindPaneVisibility(
-  paneId: string,
-  $open: { get(): boolean; listen(fn: (open: boolean) => void): void },
-  close?: () => void,
-  open?: () => void
-) {
-  setTreePaneHidden(paneId, !$open.get())
-  $open.listen(isOpen => setTreePaneHidden(paneId, !isOpen))
-
-  // The tab menu's Close routes through the owning store (never dismissal),
-  // so the pane's toggle buttons stay truthful.
-  if (close) {
-    registerPaneCloser(paneId, close)
-  }
-
-  // The opener is the mirror: preset application (revealOnPreset) shows the
-  // pane through the same store, so the toggle stays truthful.
-  if (open) {
-    registerPaneOpener(paneId, open)
-  }
-}
-
-// TOOL PANELS (terminal, logs): like bindPaneVisibility but the toggle COLLAPSES
-// the zone to a persistent rail (tab stays) instead of hiding it — the
-// IntelliJ/VS-Code tool-window model. Restore routes back through `open` (rail
-// click / chevron) so ⌃`/the button stay truthful; the tab's ✕ removes it.
-function bindPaneCollapse(
-  paneId: string,
-  $open: { get(): boolean; listen(fn: (open: boolean) => void): void },
-  close: () => void,
-  open: () => void
-) {
-  markCollapsePane(paneId)
-  setPaneCollapsed(paneId, !$open.get())
-  $open.listen(isOpen => setPaneCollapsed(paneId, !isOpen))
-  registerPaneCloser(paneId, close)
-  registerPaneOpener(paneId, open)
-}
 
 // The sidebar is bespoke CCF chrome now, outside the pane tree entirely (see
 // ContribController) — $panesFlipped/$sidebarOpen drive its side/visibility
@@ -489,74 +427,25 @@ function bindPaneCollapse(
 // allPaneIds() again, so that sync was permanently inert dead code once the
 // tree registration was removed).
 //
-// POSITIONAL side toggle (titlebar button, ⌘J): $fileBrowserOpen ≙ the RIGHT
-// side of the main zone — everything on that side hides together, whatever
-// panes have been rearranged there. (The equivalent LEFT-side binding for
-// $sidebarOpen is gone too — binding it to "hide the tree's left side" would
-// now incorrectly collapse the workspace/chat pane, since sessions no longer
-// occupies that side at all.)
-bindTreeSideVisibility('right', $fileBrowserOpen, setFileBrowserOpen)
-
-// Workspace-scoped surfaces: the file tree and git diff only mean something
-// inside a project. The terminal is NOT workspace-gated: unlike the old shell
-// (where it rode the rail's row and vanished with it), its zone stands on its
-// own.
-const $hasWorkspace = computed($currentCwd, cwd => Boolean(cwd.trim()))
-
-// Files no longer auto-reveals just because a session has a cwd (nearly every
-// session does, so it was popping open on its own) — it now follows the same
-// manual, user-controlled toggle as the titlebar button/⌘J ($fileBrowserOpen,
-// defaults closed). "Reveal in Sidebar" already goes through this same store
-// (revealFileInTree calls setFileBrowserOpen(true)), so that path is unaffected.
-bindPaneVisibility('files', $fileBrowserOpen)
+// Files, terminal, and logs are all coding-tool chrome — hidden from CCF,
+// same as review/preview, and for the same reason: this is a general-purpose
+// teammate app, not a coding IDE. Permanently hidden (not bound to a toggle
+// store) so no stale persisted "open" state and no ⌘K/keybind path can ever
+// pop them back open. The agent's own file/terminal tool calls are unrelated
+// and unaffected — those render as inline cards in the chat transcript, not
+// through this pane.
+setTreePaneHidden('files', true)
 // Review (git diff) is hidden from CCF, same as files/preview — permanently
 // hidden rather than bound to $reviewOpen, since that's a persisted atom that
 // could still read true from before this pane was hidden (an old ⌘G toggle).
 setTreePaneHidden('review', true)
-// ⌃` / statusbar toggle — the terminal COLLAPSES to a rail (tab stays), not
-// hides; PTYs stay alive while collapsed (see PersistentTerminal).
-bindPaneCollapse(
-  'terminal',
-  $terminalTakeover,
-  () => setTerminalTakeover(false),
-  () => setTerminalTakeover(true)
-)
+setTreePaneHidden('terminal', true)
 
 // Preview (the file-content/URL preview rail) is hidden from CCF, same as
 // files/review — permanently hidden rather than reactively bound to the live
 // preview targets, so it never pops open regardless of what sets them.
 setTreePaneHidden('preview', true)
-
-// Logs are optional chrome: off by default, toggled from ⌘K, persisted.
-const $logsOpen = persistentAtom('hermes.desktop.logsOpen', false, Codecs.bool)
-
-bindPaneCollapse(
-  'logs',
-  $logsOpen,
-  () => $logsOpen.set(false),
-  () => $logsOpen.set(true)
-)
-registry.register({
-  id: 'logs.toggle',
-  area: PALETTE_AREA,
-  data: {
-    id: 'logs.toggle',
-    label: 'Toggle logs',
-    keywords: ['logs', 'agent log', 'tail', 'debug'],
-    run: () => $logsOpen.set(!$logsOpen.get())
-  } satisfies PaletteContribution
-})
-
-// Files Close = collapse its side (⌘J truthful, titlebar button flips back)
-// — but only while the pane actually lives in that root side column. Dragged
-// next to main, a side collapse can't hide it (the collapse skips
-// main-bearing children), so Close falls back to dismissal there —
-// otherwise ⌘W/Close silently no-op. (Sessions/the sidebar no longer has an
-// entry here — it's bespoke chrome outside the tree now, closed directly via
-// setSidebarOpen, never dismissed as a tree pane.)
-registerPaneCloser('files', () =>
-  paneRootSide('files') === 'right' ? setFileBrowserOpen(false) : dismissTreePane('files')
-)
+setTreePaneHidden('logs', true)
 
 // ---------------------------------------------------------------------------
 

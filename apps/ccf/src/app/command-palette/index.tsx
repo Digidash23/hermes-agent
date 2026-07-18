@@ -5,7 +5,6 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 
 import { HUD_HEADING, HUD_ITEM, HUD_POSITION, HUD_SURFACE, HUD_TEXT } from '@/app/floating-hud'
-import { setTerminalTakeover } from '@/app/right-sidebar/store'
 import { Command, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command'
 import { KbdCombo } from '@/components/ui/kbd'
 import { getHermesConfigRecord, listAllProfileSessions } from '@/hermes'
@@ -40,7 +39,6 @@ import {
   SlidersHorizontal,
   Starmap,
   Sun,
-  Terminal,
   Users,
   Wrench,
   Zap
@@ -412,14 +410,6 @@ export function CommandPalette() {
             keywords: ['chat', 'create'],
             label: cc.nav.newChat.title,
             run: go(NEW_CHAT_ROUTE)
-          },
-          {
-            action: 'view.showTerminal',
-            icon: Terminal,
-            id: 'nav-terminal',
-            keywords: ['terminal', 'shell', 'console'],
-            label: t.keybinds.actions['view.showTerminal'],
-            run: () => setTerminalTakeover(true)
           },
           {
             action: 'nav.settings',
