@@ -126,6 +126,7 @@ import {
   sandboxPreflight
 } from './update-relaunch'
 import { isOfficialSshRemote, OFFICIAL_REPO_HTTPS_URL } from './update-remote'
+import { spawnUpdaterProcess } from './updater-process'
 import { fetchMarketplaceThemes, searchMarketplaceThemes } from './vscode-marketplace'
 import {
   computeWindowOptions,
@@ -2642,7 +2643,7 @@ async function applyUpdates(opts = {}) {
 
     // Detached so the updater outlives this process — it needs us GONE before
     // `hermes update` will run (the venv shim is locked while we live).
-    const child = spawn(updater, updaterArgs, {
+    const child = spawnUpdaterProcess(updater, updaterArgs, {
       cwd: HERMES_HOME,
       env: {
         ...process.env,
@@ -2650,11 +2651,8 @@ async function applyUpdates(opts = {}) {
         PATH: pathWithHermesManagedNode(venvBin)
       },
       detached: true,
-      stdio: 'ignore',
-      windowsHide: false
+      stdio: 'ignore'
     })
-
-    child.unref()
 
     // Write the update-in-progress marker IMMEDIATELY — before the 2.5s
     // quit dwell. The Tauri updater won't write its own marker for several
@@ -2720,7 +2718,7 @@ async function handOffWindowsBootstrapRecovery(reason) {
 
   await releaseBackendLockForUpdate(updateRoot)
 
-  const child = spawn(updater, updaterArgs, {
+  const child = spawnUpdaterProcess(updater, updaterArgs, {
     cwd: HERMES_HOME,
     env: {
       ...process.env,
@@ -2728,11 +2726,8 @@ async function handOffWindowsBootstrapRecovery(reason) {
       PATH: pathWithHermesManagedNode(venvBin)
     },
     detached: true,
-    stdio: 'ignore',
-    windowsHide: false
+    stdio: 'ignore'
   })
-
-  child.unref()
 
   // Same marker pre-write as applyUpdates — see comment there. The recovery
   // hand-off has the same window where the renderer can respawn a backend
@@ -2842,8 +2837,13 @@ async function applyUpdatesPosixInApp(opts: any) {
   // Put the Hermes-managed Node and the venv on PATH so `hermes desktop`'s
   // npm build can find them on a machine with no system Node. Windows portable
   // Node lives directly under %LOCALAPPDATA%\hermes\node, not node\bin.
+  // PYTHONUNBUFFERED: `hermes update` writes to a pipe here, so CPython
+  // block-buffers stdout and long quiet steps (the pre-update backup can zip
+  // multi-GB archives for minutes) stream nothing to the progress UI — users
+  // read the silence as a hang and cancel a healthy update.
   const env: Record<string, string> = {
     HERMES_HOME,
+    PYTHONUNBUFFERED: '1',
     PATH: pathWithHermesManagedNode(path.join(updateRoot, 'venv', 'bin'))
   }
 
