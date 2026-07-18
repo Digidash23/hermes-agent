@@ -193,7 +193,7 @@ export const ThreadTimeline: FC = () => {
   return (
     <div
       aria-label="Pinned messages"
-      className="group/timeline pointer-events-auto absolute left-0 top-4 z-40 flex flex-col items-start"
+      className="group/timeline pointer-events-auto absolute left-1 top-8 z-40 flex flex-col items-start"
       data-slot="thread-timeline"
       data-suppress-pane-reveal=""
       onMouseEnter={keepOpen}

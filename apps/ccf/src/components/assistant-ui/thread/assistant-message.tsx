@@ -16,18 +16,11 @@ import {
 } from '@/components/assistant-ui/thread/content'
 import { MESSAGE_PARTS_COMPONENTS } from '@/components/assistant-ui/thread/message-parts'
 import { StreamStallIndicator } from '@/components/assistant-ui/thread/status'
-import { formatMessageTimestamp } from '@/components/assistant-ui/thread/timestamp'
 import { TooltipIconButton } from '@/components/assistant-ui/tooltip-icon-button'
 import { PreviewAttachment } from '@/components/chat/preview-attachment'
 import { Codicon } from '@/components/ui/codicon'
 import { CopyButton } from '@/components/ui/copy-button'
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuTrigger
-} from '@/components/ui/dropdown-menu'
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
 import { useI18n } from '@/i18n'
 import { triggerHaptic } from '@/lib/haptics'
 import { GitBranchIcon, Loader2Icon, PinnedIcon, PinnedIconFilled, Volume2Icon, VolumeXIcon, XIcon } from '@/lib/icons'
@@ -183,7 +176,6 @@ const AssistantActionBar: FC<MessageActionProps> = ({ messageId, getMessageText,
             </TooltipIconButton>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="start" onCloseAutoFocus={e => e.preventDefault()} sideOffset={6}>
-            <MessageTimestamp />
             <DropdownMenuItem onSelect={() => onBranchInNewChat?.(messageId)}>
               <GitBranchIcon />
               {copy.branchNewChat}
@@ -235,18 +227,6 @@ const ReadAloudItem: FC<{ getText: () => string; messageId: string }> = ({ getTe
       {isPreparing ? copy.preparingAudio : isSpeaking ? copy.stopReading : copy.readAloud}
     </DropdownMenuItem>
   )
-}
-
-const MessageTimestamp: FC = () => {
-  const { t } = useI18n()
-  const createdAt = useAuiState(s => s.message.createdAt)
-  const label = formatMessageTimestamp(createdAt, t.assistant.thread)
-
-  if (!label) {
-    return null
-  }
-
-  return <DropdownMenuLabel className="text-xs font-normal text-muted-foreground">{label}</DropdownMenuLabel>
 }
 
 const AssistantFooter: FC<MessageActionProps> = props => (
