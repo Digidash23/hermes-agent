@@ -15,26 +15,32 @@ describe('timelinePreview', () => {
 })
 
 describe('deriveTimelineEntries', () => {
-  it('keeps non-empty user prompts in order', () => {
+  it('keeps only pinned messages, in thread order', () => {
     expect(
-      deriveTimelineEntries([
-        { id: 'u1', role: 'user', text: 'first' },
-        { id: 'a1', role: 'assistant', text: 'answer' },
-        { id: 'u2', role: 'user', text: '  second  ' }
-      ])
+      deriveTimelineEntries(
+        [
+          { id: 'u1', text: 'first' },
+          { id: 'a1', text: 'answer' },
+          { id: 'u2', text: '  second  ' }
+        ],
+        new Set(['u1', 'u2'])
+      )
     ).toEqual([
       { id: 'u1', preview: 'first' },
       { id: 'u2', preview: 'second' }
     ])
   })
 
-  it('drops blanks and background-process notifications', () => {
+  it('drops blanks even if pinned, and ignores unpinned messages', () => {
     expect(
-      deriveTimelineEntries([
-        { id: 'u1', role: 'user', text: '   ' },
-        { id: 'u2', role: 'user', text: '[IMPORTANT: Background process 123 finished]' },
-        { id: 'u3', role: 'user', text: 'real prompt' }
-      ]).map(e => e.id)
+      deriveTimelineEntries(
+        [
+          { id: 'u1', text: '   ' },
+          { id: 'u2', text: 'not pinned' },
+          { id: 'u3', text: 'real prompt' }
+        ],
+        new Set(['u1', 'u3'])
+      ).map(e => e.id)
     ).toEqual(['u3'])
   })
 })

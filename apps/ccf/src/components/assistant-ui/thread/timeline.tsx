@@ -1,9 +1,12 @@
 import { useAuiState } from '@assistant-ui/react'
+import { useStore } from '@nanostores/react'
 import { type FC, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 import { triggerHaptic } from '@/lib/haptics'
 import { cn } from '@/lib/utils'
+import { $pinnedMessageIds } from '@/store/pinned-messages'
 
+import { messageContentText } from './content'
 import {
   activeTimelineIndex,
   deriveTimelineEntries,
@@ -11,7 +14,6 @@ import {
   type TimelineSourceMessage
 } from './timeline-data'
 
-const MIN_ENTRIES = 4
 const VIEWPORT = '[data-slot="aui_thread-viewport"]'
 const HOVER_CLOSE_MS = 140
 
@@ -22,39 +24,7 @@ const ROW_CLASS =
 // `[data-slot='thread-timeline-popover']` rule in styles.css, so it's 1:1 with
 // the dropdown/select/dialog menus. We only own layout + the border/radius here.
 const POPOVER_SHELL =
-  'absolute right-full top-1/2 z-50 max-h-[min(22rem,calc(100vh-8rem))] w-80 max-w-[min(20rem,calc(100vw-2rem))] -translate-y-1/2 overflow-x-hidden overflow-y-auto overscroll-contain rounded-lg border p-1 text-popover-foreground transition-[opacity,transform] duration-100 ease-out group-hover/timeline:transition-none'
-
-function userPromptText(content: unknown): string {
-  if (typeof content === 'string') {
-    return content
-  }
-
-  if (!Array.isArray(content)) {
-    return ''
-  }
-
-  let out = ''
-
-  for (const part of content) {
-    if (typeof part === 'string') {
-      out += part
-
-      continue
-    }
-
-    if (!part || typeof part !== 'object') {
-      continue
-    }
-
-    const row = part as { text?: unknown; type?: unknown }
-
-    if ((!row.type || row.type === 'text') && typeof row.text === 'string') {
-      out += row.text
-    }
-  }
-
-  return out
-}
+  'absolute left-full top-1/2 z-50 max-h-[min(22rem,calc(100vh-8rem))] w-80 max-w-[min(20rem,calc(100vw-2rem))] -translate-y-1/2 overflow-x-hidden overflow-y-auto overscroll-contain rounded-lg border p-1 text-popover-foreground transition-[opacity,transform] duration-100 ease-out group-hover/timeline:transition-none'
 
 /** Index-keyed ref-array setter — `ref={listRef(refs, i)}`. */
 const listRef =
@@ -115,26 +85,24 @@ function scrollToPrompt(id: string) {
   jumpScroll(viewport, Math.max(0, top))
 }
 
-/** Right-edge prompt rail — hover previews, click to jump. ≥4 user turns only. */
+/** Right-edge pinned-message rail — hover previews, click to jump. */
 export const ThreadTimeline: FC = () => {
   const sourceSignature = useAuiState(s => {
-    const rows: TimelineSourceMessage[] = []
-
-    for (const message of s.thread.messages) {
-      if (message.role !== 'user') {
-        continue
-      }
-
-      rows.push({ id: message.id, role: 'user', text: userPromptText(message.content) })
-    }
+    const rows: TimelineSourceMessage[] = s.thread.messages.map(message => ({
+      id: message.id,
+      text: messageContentText(message.content)
+    }))
 
     return JSON.stringify(rows)
   })
 
-  const entries = useMemo(
-    () => deriveTimelineEntries(JSON.parse(sourceSignature) as TimelineSourceMessage[]),
-    [sourceSignature]
-  )
+  const pinnedIds = useStore($pinnedMessageIds)
+
+  const entries = useMemo(() => {
+    const pinnedSet = new Set(pinnedIds)
+
+    return deriveTimelineEntries(JSON.parse(sourceSignature) as TimelineSourceMessage[], pinnedSet)
+  }, [sourceSignature, pinnedIds])
 
   const [activeIndex, setActiveIndex] = useState(0)
   const [open, setOpen] = useState(false)
@@ -218,14 +186,14 @@ export const ThreadTimeline: FC = () => {
     }
   }, [entries])
 
-  if (entries.length < MIN_ENTRIES) {
+  if (entries.length === 0) {
     return null
   }
 
   return (
     <div
-      aria-label="Conversation timeline"
-      className="group/timeline pointer-events-auto absolute right-0 top-1/2 z-40 flex -translate-y-1/2 flex-col items-end"
+      aria-label="Pinned messages"
+      className="group/timeline pointer-events-auto absolute left-0 top-4 z-40 flex flex-col items-start"
       data-slot="thread-timeline"
       data-suppress-pane-reveal=""
       onMouseEnter={keepOpen}
@@ -262,7 +230,7 @@ const TimelinePopover: FC<{
   <div
     className={cn(
       POPOVER_SHELL,
-      open ? 'pointer-events-auto opacity-100 translate-x-0' : 'pointer-events-none translate-x-1 opacity-0'
+      open ? 'pointer-events-auto opacity-100 translate-x-0' : 'pointer-events-none -translate-x-1 opacity-0'
     )}
     data-slot="thread-timeline-popover"
   >
@@ -289,11 +257,11 @@ const TimelineTicks: FC<{
   onJump: (id: string) => void
   tickRefs: React.RefObject<(HTMLSpanElement | null)[]>
 }> = ({ activeIndex, entries, onHover, onJump, tickRefs }) => (
-  <div className="flex flex-col items-end py-1" data-slot="thread-timeline-ticks">
+  <div className="flex flex-col items-start py-1" data-slot="thread-timeline-ticks">
     {entries.map((entry, index) => (
       <button
         aria-label={entry.preview}
-        className="flex h-2 w-7 cursor-pointer items-center justify-end pr-1"
+        className="flex h-2 w-7 cursor-pointer items-center justify-start pl-1"
         key={entry.id}
         onClick={() => onJump(entry.id)}
         type="button"

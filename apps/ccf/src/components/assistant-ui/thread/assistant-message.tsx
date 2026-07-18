@@ -30,12 +30,13 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { useI18n } from '@/i18n'
 import { triggerHaptic } from '@/lib/haptics'
-import { GitBranchIcon, Loader2Icon, Volume2Icon, VolumeXIcon, XIcon } from '@/lib/icons'
+import { GitBranchIcon, Loader2Icon, PinnedIcon, PinnedIconFilled, Volume2Icon, VolumeXIcon, XIcon } from '@/lib/icons'
 import { extractPreviewTargets } from '@/lib/preview-targets'
 import { useEnterAnimation } from '@/lib/use-enter-animation'
 import { cn } from '@/lib/utils'
 import { playSpeechText, stopVoicePlayback } from '@/lib/voice-playback'
 import { notifyError } from '@/store/notifications'
+import { $pinnedMessageIds, togglePinnedMessage } from '@/store/pinned-messages'
 import { $voicePlayback } from '@/store/voice-playback'
 
 interface MessageActionProps {
@@ -141,6 +142,8 @@ const AssistantActionBar: FC<MessageActionProps> = ({ messageId, getMessageText,
   const { t } = useI18n()
   const copy = t.assistant.thread
   const [menuOpen, setMenuOpen] = useState(false)
+  const pinnedIds = useStore($pinnedMessageIds)
+  const pinned = pinnedIds.includes(messageId)
 
   return (
     <div className="relative flex w-full shrink-0 justify-start">
@@ -164,6 +167,15 @@ const AssistantActionBar: FC<MessageActionProps> = ({ messageId, getMessageText,
             <Codicon name="refresh" />
           </TooltipIconButton>
         </ActionBarPrimitive.Reload>
+        <TooltipIconButton
+          onClick={() => {
+            triggerHaptic('selection')
+            togglePinnedMessage(messageId)
+          }}
+          tooltip={pinned ? copy.unpinMessage : copy.pinMessage}
+        >
+          {pinned ? <PinnedIconFilled className="text-(--theme-primary)" /> : <PinnedIcon />}
+        </TooltipIconButton>
         <DropdownMenu onOpenChange={setMenuOpen} open={menuOpen}>
           <DropdownMenuTrigger asChild>
             <TooltipIconButton tooltip={copy.moreActions}>

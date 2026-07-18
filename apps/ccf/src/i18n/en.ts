@@ -2382,6 +2382,8 @@ export const en: Translations = {
       copy: 'Copy',
       refresh: 'Refresh',
       moreActions: 'More actions',
+      pinMessage: 'Pin message',
+      unpinMessage: 'Unpin message',
       branchNewChat: 'Branch in new chat',
       dismissError: 'Dismiss error',
       readAloudFailed: 'Read aloud failed',

@@ -2542,6 +2542,8 @@ export const zh: Translations = {
       copy: '复制',
       refresh: '刷新',
       moreActions: '更多操作',
+      pinMessage: '固定消息',
+      unpinMessage: '取消固定',
       branchNewChat: '在新对话中分支',
       dismissError: '关闭错误',
       readAloudFailed: '朗读失败',

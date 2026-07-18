@@ -2006,6 +2006,8 @@ export interface Translations {
       copy: string
       refresh: string
       moreActions: string
+      pinMessage: string
+      unpinMessage: string
       branchNewChat: string
       dismissError: string
       readAloudFailed: string

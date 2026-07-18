@@ -2300,6 +2300,8 @@ export const ja = defineLocale({
       copy: 'コピー',
       refresh: '更新',
       moreActions: 'その他のアクション',
+      pinMessage: 'メッセージをピン留め',
+      unpinMessage: 'ピン留めを解除',
       branchNewChat: '新しいチャットでブランチ',
       dismissError: 'エラーを閉じる',
       readAloudFailed: '読み上げに失敗しました',

@@ -2230,6 +2230,8 @@ export const zhHant = defineLocale({
       copy: '複製',
       refresh: '重新整理',
       moreActions: '更多動作',
+      pinMessage: '釘選訊息',
+      unpinMessage: '取消釘選',
       branchNewChat: '在新聊天中分支',
       dismissError: '关闭错误',
       readAloudFailed: '朗讀失敗',
