@@ -501,13 +501,17 @@ function bindPaneCollapse(
 bindTreeSideVisibility('right', $fileBrowserOpen, setFileBrowserOpen)
 
 // Workspace-scoped surfaces: the file tree and git diff only mean something
-// inside a project. A detached chat (no cwd) hides them — their zones
-// collapse and the chat absorbs the width; picking a project brings them
-// back. The terminal is NOT workspace-gated: unlike the old shell (where it
-// rode the rail's row and vanished with it), its zone stands on its own.
+// inside a project. The terminal is NOT workspace-gated: unlike the old shell
+// (where it rode the rail's row and vanished with it), its zone stands on its
+// own.
 const $hasWorkspace = computed($currentCwd, cwd => Boolean(cwd.trim()))
 
-bindPaneVisibility('files', $hasWorkspace)
+// Files no longer auto-reveals just because a session has a cwd (nearly every
+// session does, so it was popping open on its own) — it now follows the same
+// manual, user-controlled toggle as the titlebar button/⌘J ($fileBrowserOpen,
+// defaults closed). "Reveal in Sidebar" already goes through this same store
+// (revealFileInTree calls setFileBrowserOpen(true)), so that path is unaffected.
+bindPaneVisibility('files', $fileBrowserOpen)
 // ⌘G — the review sidebar appears/disappears (and comes to the front).
 bindPaneVisibility(
   'review',
