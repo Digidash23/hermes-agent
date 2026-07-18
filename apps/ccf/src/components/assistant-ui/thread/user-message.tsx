@@ -1,10 +1,11 @@
-import { BranchPickerPrimitive, MessagePrimitive, useAuiState } from '@assistant-ui/react'
+import { ActionBarPrimitive, BranchPickerPrimitive, MessagePrimitive, useAuiState } from '@assistant-ui/react'
 import { type FC, type ReactNode } from 'react'
 
 import { DirectiveContent } from '@/components/assistant-ui/directive-text'
 import { messageAttachmentRefs, messageContentText } from '@/components/assistant-ui/thread/content'
 import { UserMessageText } from '@/components/assistant-ui/thread/user-message-text'
 import { Codicon } from '@/components/ui/codicon'
+import { CopyButton } from '@/components/ui/copy-button'
 import { useI18n } from '@/i18n'
 import { StopFilled } from '@/lib/icons'
 import { cn } from '@/lib/utils'
@@ -111,6 +112,26 @@ const ProcessNotificationNote: FC<{ text: string }> = ({ text }) => {
   )
 }
 
+// Standard chat-UI pattern: a small copy row under the bubble, revealed on
+// hover, right-aligned to match the right-aligned bubble above it (mirrors
+// AssistantActionBar's left-aligned equivalent — same data-slot styling hook
+// in styles.css, so the two render pixel-identical).
+const UserActionBar: FC<{ getMessageText: () => string }> = ({ getMessageText }) => {
+  const { t } = useI18n()
+  const copy = t.assistant.thread
+
+  return (
+    <div className="relative flex w-full shrink-0 justify-end">
+      <ActionBarPrimitive.Root
+        className="relative flex flex-row items-center justify-end gap-2 py-1.5 opacity-0 pointer-events-none group-hover/user-message:pointer-events-auto group-hover/user-message:opacity-100 focus-within:pointer-events-auto focus-within:opacity-100"
+        data-slot="aui_user-msg-actions"
+      >
+        <CopyButton appearance="icon" buttonSize="icon" label={copy.copy} text={getMessageText} />
+      </ActionBarPrimitive.Root>
+    </div>
+  )
+}
+
 export const UserMessage: FC<{
   onCancel?: () => Promise<void> | void
 }> = ({ onCancel }) => {
@@ -211,6 +232,7 @@ export const UserMessage: FC<{
             </div>
           )}
         </div>
+        {hasBody && <UserActionBar getMessageText={() => messageText} />}
         <BranchPickerPrimitive.Root
           className={cn(
             'checkpoint-container flex items-center gap-1 pb-0 pt-1 pl-1.5 text-[0.75rem] leading-none text-(--ui-text-tertiary)',
