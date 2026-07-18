@@ -68,7 +68,7 @@ export function TitlebarControls({ leftTools = [], tools = [], onOpenSettings }:
   const leftToolbarTools: TitlebarTool[] = [
     {
       actionId: 'view.toggleSidebar',
-      icon: <Codicon name="layout-sidebar-left" />,
+      icon: <Codicon name="layout-sidebar-left-off" />,
       id: 'sidebar',
       label: leftEdge.open ? t.titlebar.hideSidebar : t.titlebar.showSidebar,
       onSelect: () => {
