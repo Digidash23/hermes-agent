@@ -2040,7 +2040,7 @@ export const ja = defineLocale({
       manualDescription: '承認が必要な操作の前に確認します',
       smart: 'スマート',
       smartDescription: '必要な場合にのみ確認します',
-      off: 'オフ',
+      off: 'オート',
       offDescription: '承認プロンプトなしで実行します'
     },
     statusbar: {

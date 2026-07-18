@@ -2119,7 +2119,7 @@ export const en: Translations = {
       manualDescription: 'Ask before actions that require approval',
       smart: 'Smart',
       smartDescription: 'Automatically assess actions and ask when needed',
-      off: 'Off',
+      off: 'Auto',
       offDescription: 'Run without approval prompts'
     },
     statusbar: {
