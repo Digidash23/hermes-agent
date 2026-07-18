@@ -164,6 +164,12 @@ export function useComposerMetrics({ composerRef, composerSurfaceRef, editorRef,
       const root = document.documentElement
       root.style.removeProperty('--composer-measured-height')
       root.style.removeProperty('--composer-surface-measured-height')
+      // Reset the bucketing memo alongside the DOM removal — otherwise a
+      // remount (e.g. React Strict Mode's dev-only double-invoke) sees the
+      // same bucket as last time, skips the setProperty call, and leaves the
+      // var permanently unset even though this ref reports it as current.
+      lastBucketedHeightRef.current = 0
+      lastBucketedSurfaceHeightRef.current = 0
     }
   }, [])
 

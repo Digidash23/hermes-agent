@@ -30,7 +30,6 @@ import { COMPOSER_DROP_ACTIVE_CLASS, COMPOSER_DROP_FADE_CLASS } from './drop-aff
 import { markActiveComposer } from './focus'
 import { HelpHint } from './help-hint'
 import { useAtCompletions } from './hooks/use-at-completions'
-import { useComposerBranch } from './hooks/use-composer-branch'
 import { useComposerDraft } from './hooks/use-composer-draft'
 import { useComposerDrop } from './hooks/use-composer-drop'
 import { useComposerEscCancel } from './hooks/use-composer-esc-cancel'
@@ -56,7 +55,6 @@ import {
 } from './rich-editor'
 import { useComposerScope } from './scope'
 import { ComposerStatusStack } from './status-stack'
-import { CodingStatusRow } from './status-stack/coding-row'
 import { extractClipboardImageBlobs } from './text-utils'
 import { ComposerTriggerPopover } from './trigger-popover'
 import type { ChatBarProps } from './types'
@@ -663,11 +661,6 @@ export function ChatBar({
     handleInputDrop
   } = useComposerDrop({ cwd, insertInlineRefs, onAttachDroppedItems, requestMainFocus })
 
-  // Branch / worktree hand-offs (CodingStatusRow). Owns the worktree open +
-  // branch-off/convert/list/switch actions; draft travels into the new session.
-  const { handleBranchOff, handleConvertBranch, handleListBranches, handleSwitchBranch, openInWorktree } =
-    useComposerBranch({ clearDraft, cwd, draftRef })
-
   // Global Esc-to-cancel when the chat (not the composer input) has focus.
   useComposerEscCancel({ awaitingInput, busy, onCancel, target: scope.target })
 
@@ -945,14 +938,6 @@ export function ChatBar({
                   composerFill,
                   composerSurfaceGlass
                 )}
-              />
-              <CodingStatusRow
-                onBranchOff={handleBranchOff}
-                onConvertBranch={handleConvertBranch}
-                onListBranches={handleListBranches}
-                onOpenWorktree={openInWorktree}
-                onSwitchBranch={handleSwitchBranch}
-                repoPath={cwd}
               />
               <div
                 className={cn(
