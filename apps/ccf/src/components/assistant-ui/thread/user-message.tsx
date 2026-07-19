@@ -1,8 +1,8 @@
 import { ActionBarPrimitive, BranchPickerPrimitive, MessagePrimitive, useAuiState } from '@assistant-ui/react'
 import { type FC, type ReactNode } from 'react'
 
-import { DirectiveContent } from '@/components/assistant-ui/directive-text'
-import { messageAttachmentRefs, messageContentText } from '@/components/assistant-ui/thread/content'
+import { DirectiveContent, formatRefValue } from '@/components/assistant-ui/directive-text'
+import { extractPersistedImageHints, messageAttachmentRefs, messageContentText } from '@/components/assistant-ui/thread/content'
 import { UserMessageText } from '@/components/assistant-ui/thread/user-message-text'
 import { Codicon } from '@/components/ui/codicon'
 import { CopyButton } from '@/components/ui/copy-button'
@@ -137,13 +137,26 @@ export const UserMessage: FC = () => {
   const copy = t.assistant.thread
   const messageId = useAuiState(s => s.message.id)
   const content = useAuiState(s => s.message.content)
-  const messageText = messageContentText(content)
+  const rawMessageText = messageContentText(content)
 
-  const attachmentRefs = useAuiState(s => {
+  const liveAttachmentRefs = useAuiState(s => {
     const custom = (s.message.metadata?.custom ?? {}) as { attachmentRefs?: unknown }
 
     return messageAttachmentRefs(custom.attachmentRefs)
   })
+
+  // liveAttachmentRefs only ever exists in memory for the session that sent
+  // the message (submit.ts) — a reload has none. Fall back to the backend's
+  // persisted hint-line text instead of showing it raw (see
+  // extractPersistedImageHints for why the backend doesn't just persist the
+  // image bytes).
+  const persistedHints = liveAttachmentRefs.length === 0 ? extractPersistedImageHints(rawMessageText) : null
+  const messageText = persistedHints ? persistedHints.cleanedText : rawMessageText
+
+  const attachmentRefs =
+    liveAttachmentRefs.length > 0
+      ? liveAttachmentRefs
+      : (persistedHints?.paths ?? []).map(path => `@image:${formatRefValue(path)}`)
 
   // Watch windows spectate a subagent run driven elsewhere — prompts can't be
   // edited or restored from here, so the checkpoint nav is hidden; the bubble
