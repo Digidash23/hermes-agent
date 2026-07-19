@@ -45,6 +45,7 @@ export function HumanMessageRow({
     // block, which is sized *by* the item — circular). The column split
     // above is the only cap the bubble needs.
     <>
+      {attachments}
       <div
         className="group/user-message grid w-full grid-cols-[minmax(25%,1fr)_auto] gap-0 px-4 pb-(--conversation-turn-gap) pt-1 [&>*]:col-start-2"
         data-message-id={messageId}
@@ -53,7 +54,6 @@ export function HumanMessageRow({
       >
         {children}
       </div>
-      {attachments}
     </>
   )
 }
@@ -177,26 +177,30 @@ export const UserMessage: FC = () => {
     <MessagePrimitive.Root asChild>
       <HumanMessageRow
         attachments={
-          // Attachments render below the bubble in normal flow. Image refs
+          // Attachments render above the bubble, in normal flow — putting the
+          // text first left a gap before the image (the hover-only copy
+          // button row between them still reserves its height). Image refs
           // render as thumbnails, file refs as chips; no border.
           attachmentRefs.length > 0 ? (
-            <div className="flex flex-wrap gap-1 -mt-3 mb-2">
+            <div className="flex flex-wrap justify-end gap-1 mb-[2px] px-4">
               <DirectiveContent text={attachmentRefs.join(' ')} />
             </div>
           ) : null
         }
         messageId={messageId}
       >
-        <div className="relative">
-          <div
-            className={cn(
-              USER_BUBBLE_BASE_CLASS,
-              'text-[length:var(--conversation-text-font-size)] leading-(--dt-line-height) text-foreground/95'
-            )}
-          >
-            {bubbleContent}
+        {hasBody && (
+          <div className="relative">
+            <div
+              className={cn(
+                USER_BUBBLE_BASE_CLASS,
+                'text-[length:var(--conversation-text-font-size)] leading-(--dt-line-height) text-foreground/95'
+              )}
+            >
+              {bubbleContent}
+            </div>
           </div>
-        </div>
+        )}
         {hasBody && <UserActionBar getMessageText={() => messageText} />}
         <BranchPickerPrimitive.Root
           className={cn(

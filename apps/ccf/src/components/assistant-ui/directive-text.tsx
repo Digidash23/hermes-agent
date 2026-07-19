@@ -367,7 +367,7 @@ export function DirectiveContent({ text }: { text: string }) {
           {images.map((src, index) => (
             <ZoomableImage
               alt=""
-              className="max-h-48 max-w-full rounded-lg border border-border/60 object-contain"
+              className="max-h-48 max-w-full rounded-[12px] border border-border/60 object-contain"
               draggable={false}
               key={`img-${index}`}
               slot="aui_embedded-image"
@@ -430,7 +430,7 @@ const DirectiveImage: FC<{ id: string; label: string }> = ({ id, label }) => {
   return (
     <ZoomableImage
       alt={label}
-      className="max-h-32 max-w-48 rounded-md border border-border/40 object-contain"
+      className="max-h-32 max-w-48 rounded-[12px] border border-border/40 object-contain"
       draggable={false}
       slot="aui_directive-image"
       src={src}
