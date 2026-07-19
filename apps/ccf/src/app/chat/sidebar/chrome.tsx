@@ -73,10 +73,7 @@ export function SidebarRowShell({
   ...props
 }: React.ComponentProps<'div'> & { actions?: React.ReactNode }) {
   return (
-    <div
-      className={cn(rowMinH, 'relative flex items-stretch overflow-hidden rounded-[8px]', className)}
-      {...props}
-    >
+    <div className={cn(rowMinH, 'relative flex items-stretch rounded-[8px]', className)} {...props}>
       {children}
       {actions ? (
         <div className="pointer-events-none absolute inset-y-0 right-1 z-2 flex items-center opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100 [&:has([data-state=open])]:opacity-100">
