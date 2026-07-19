@@ -455,7 +455,6 @@ export function ChatView({
             intro={showIntro ? { personality: introPersonality, seed: introSeed } : undefined}
             loading={threadLoading}
             onBranchInNewChat={onBranchInNewChat}
-            onCancel={onCancel}
             onDismissError={onDismissError}
             sessionId={activeSessionId}
             sessionKey={threadKey}

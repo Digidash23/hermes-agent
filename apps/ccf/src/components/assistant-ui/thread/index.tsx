@@ -23,7 +23,6 @@ export const Thread: FC<{
   intro?: IntroProps
   loading?: ThreadLoadingState
   onBranchInNewChat?: (messageId: string) => void
-  onCancel?: () => Promise<void> | void
   onDismissError?: (messageId: string) => void
   sessionId?: string | null
   sessionKey?: string | null
@@ -34,7 +33,6 @@ export const Thread: FC<{
   intro,
   loading,
   onBranchInNewChat,
-  onCancel,
   onDismissError,
   sessionId = null,
   sessionKey
@@ -46,9 +44,9 @@ export const Thread: FC<{
       ),
       SystemMessage,
       UserEditComposer: () => <UserEditComposer cwd={cwd} gateway={gateway} sessionId={sessionId} />,
-      UserMessage: () => <UserMessage onCancel={onCancel} />
+      UserMessage
     }),
-    [cwd, gateway, onBranchInNewChat, onCancel, onDismissError, sessionId]
+    [cwd, gateway, onBranchInNewChat, onDismissError, sessionId]
   )
 
   const emptyPlaceholder = intro ? (

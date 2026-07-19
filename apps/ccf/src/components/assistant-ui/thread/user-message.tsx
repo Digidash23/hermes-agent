@@ -132,27 +132,12 @@ const UserActionBar: FC<{ getMessageText: () => string }> = ({ getMessageText })
   )
 }
 
-export const UserMessage: FC<{
-  onCancel?: () => Promise<void> | void
-}> = ({ onCancel }) => {
+export const UserMessage: FC = () => {
   const { t } = useI18n()
   const copy = t.assistant.thread
   const messageId = useAuiState(s => s.message.id)
   const content = useAuiState(s => s.message.content)
   const messageText = messageContentText(content)
-  const threadRunning = useAuiState(s => s.thread.isRunning)
-
-  const latestUserId = useAuiState(s => {
-    for (let i = s.thread.messages.length - 1; i >= 0; i--) {
-      const message = s.thread.messages[i] as { id?: string; role?: string }
-
-      if (message.role === 'user') {
-        return message.id ?? null
-      }
-    }
-
-    return null
-  })
 
   const attachmentRefs = useAuiState(s => {
     const custom = (s.message.metadata?.custom ?? {}) as { attachmentRefs?: unknown }
@@ -161,8 +146,8 @@ export const UserMessage: FC<{
   })
 
   // Watch windows spectate a subagent run driven elsewhere — prompts can't be
-  // edited, restored, or stopped from here, so the stop/restore icons and
-  // checkpoint nav are hidden; the bubble itself renders the same either way.
+  // edited or restored from here, so the checkpoint nav is hidden; the bubble
+  // itself renders the same either way.
   const readOnly = isWatchWindow()
 
   // Injected background-process notification, not a human prompt — render the
@@ -180,8 +165,6 @@ export const UserMessage: FC<{
   }
 
   const hasBody = messageText.trim().length > 0
-  const isLatestUser = messageId === latestUserId
-  const showStop = !readOnly && isLatestUser && threadRunning && Boolean(onCancel)
 
   const bubbleContent = hasBody && (
     // Render the user's text through a minimal markdown pipeline: backtick
@@ -208,29 +191,11 @@ export const UserMessage: FC<{
           <div
             className={cn(
               USER_BUBBLE_BASE_CLASS,
-              showStop && 'pr-9',
               'text-[length:var(--conversation-text-font-size)] leading-(--dt-line-height) text-foreground/95'
             )}
           >
             {bubbleContent}
           </div>
-          {showStop && (
-            <div className="pointer-events-none absolute right-2 bottom-2 z-10 flex items-center justify-center opacity-0 transition-opacity group-hover/user-message:opacity-100 group-focus-within/user-message:opacity-100">
-              <button
-                aria-label={copy.stop}
-                className={cn('pointer-events-auto size-5', USER_ACTION_ICON_BUTTON_CLASS)}
-                onClick={event => {
-                  event.preventDefault()
-                  event.stopPropagation()
-                  void onCancel?.()
-                }}
-                title={copy.stop}
-                type="button"
-              >
-                {StopGlyph}
-              </button>
-            </div>
-          )}
         </div>
         {hasBody && <UserActionBar getMessageText={() => messageText} />}
         <BranchPickerPrimitive.Root
