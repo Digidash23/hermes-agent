@@ -363,14 +363,14 @@ export function CapRow({
   return (
     <div
       className={cn(
-        'group/row row-hover flex w-full shrink-0 items-center rounded-md hover:text-foreground',
+        'group/row row-hover flex w-full shrink-0 items-center rounded-[8px] hover:text-foreground',
         subtitle ? 'h-11' : 'h-8',
         active ? 'bg-(--ui-row-active-background) text-foreground' : 'text-(--ui-text-secondary)'
       )}
       id={rowId}
     >
       <RowButton
-        className="flex h-full min-w-0 flex-1 cursor-pointer items-center gap-2 rounded-md pl-2 pr-1.5 text-left"
+        className="flex h-full min-w-0 flex-1 cursor-pointer items-center gap-2 rounded-[8px] pl-2 pr-1.5 text-left"
         onClick={onSelect}
       >
         <span className="min-w-0 flex-1">

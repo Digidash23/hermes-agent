@@ -105,7 +105,7 @@ function HubSkillRow({
   }
 
   return (
-    <div className="row-hover flex items-start gap-3 rounded-md px-2 py-2.5">
+    <div className="row-hover flex items-start gap-3 rounded-[8px] px-2 py-2.5">
       <div className="min-w-0 flex-1">
         <div className="flex flex-wrap items-center gap-1.5">
           <span className="truncate text-[0.78rem] font-medium text-foreground/85">{skill.name}</span>

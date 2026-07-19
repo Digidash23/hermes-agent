@@ -175,13 +175,13 @@ export function PanelListRow({
   return (
     <div
       className={cn(
-        'group/row row-hover relative flex h-7 w-full items-center rounded-md text-[0.78rem] hover:text-foreground',
+        'group/row row-hover relative flex h-7 w-full items-center rounded-[8px] text-[0.78rem] hover:text-foreground',
         active ? 'bg-(--ui-row-active-background) text-foreground' : 'text-(--ui-text-secondary)'
       )}
       data-panel-row={rowKey}
     >
       <RowButton
-        className="flex h-full min-w-0 flex-1 items-center gap-2 rounded-md pl-2 pr-1 text-left"
+        className="flex h-full min-w-0 flex-1 items-center gap-2 rounded-[8px] pl-2 pr-1 text-left"
         onClick={onSelect}
       >
         {lead ??
@@ -358,7 +358,7 @@ export function PanelAddButton({
     <Tip label={label}>
       <Button
         aria-label={label}
-        className="h-7 w-full shrink-0 justify-center text-muted-foreground/70 hover:bg-(--ui-row-hover-background) hover:text-foreground"
+        className="h-7 w-full shrink-0 justify-center rounded-[8px] text-muted-foreground/70 hover:bg-(--ui-row-hover-background) hover:text-foreground"
         onClick={onClick}
         size="sm"
         variant="ghost"
@@ -383,7 +383,7 @@ export function PanelAction({
 }) {
   return (
     <Button
-      className="gap-1.5 text-muted-foreground hover:bg-(--ui-row-hover-background) hover:text-foreground"
+      className="gap-1.5 rounded-[8px] text-muted-foreground hover:bg-(--ui-row-hover-background) hover:text-foreground"
       disabled={disabled}
       onClick={onClick}
       size="sm"
