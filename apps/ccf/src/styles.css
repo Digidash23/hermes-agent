@@ -578,7 +578,7 @@
   }
 }
 
-@keyframes arc-border {
+@keyframes session-glow-sweep {
   0% {
     background-position: 15% 15%;
   }
@@ -587,21 +587,21 @@
   }
 }
 
-.arc-border {
-  --arc-c0: color-mix(in srgb, var(--dt-foreground) 0%, transparent);
-  --arc-c1: var(--dt-midground);
-  --arc-c2: var(--dt-background);
-  --arc-angle: 160deg;
-  --arc-width: 0.078125rem;
-  --arc-inset: -0.125rem;
-  --arc-duration: 2.23s;
+.session-glow {
+  --glow-c0: color-mix(in srgb, var(--dt-foreground) 0%, transparent);
+  --glow-c1: var(--dt-midground);
+  --glow-c2: var(--dt-background);
+  --glow-angle: 160deg;
+  --glow-width: 0.078125rem;
+  --glow-inset: -0.125rem;
+  --glow-duration: 2.23s;
 
   pointer-events: none;
   position: absolute;
   overflow: hidden;
   border-radius: inherit;
-  inset: var(--arc-inset);
-  padding: var(--arc-width);
+  inset: var(--glow-inset);
+  padding: var(--glow-width);
   mask:
     linear-gradient(#000 0 0) content-box,
     linear-gradient(#000 0 0);
@@ -609,8 +609,8 @@
   mask-composite: exclude;
 }
 
-:root.dark .arc-border {
-  --arc-c1: var(--dt-foreground);
+:root.dark .session-glow {
+  --glow-c1: var(--dt-foreground);
 }
 
 /* Quest-style "needs you" pulse for a clarify-blocked session's dot —
@@ -664,46 +664,46 @@
   }
 }
 
-.arc-border::before {
+.session-glow::before {
   content: '';
   position: absolute;
   inset: 0;
   border-radius: inherit;
   background: linear-gradient(
-    var(--arc-angle),
+    var(--glow-angle),
     transparent 0%,
-    var(--arc-c0) 15%,
-    var(--arc-c1) 20%,
-    var(--arc-c2) 25%,
+    var(--glow-c0) 15%,
+    var(--glow-c1) 20%,
+    var(--glow-c2) 25%,
     transparent 35%,
     transparent 40%,
-    var(--arc-c0) 55%,
-    var(--arc-c1) 60%,
-    var(--arc-c2) 65%,
+    var(--glow-c0) 55%,
+    var(--glow-c1) 60%,
+    var(--glow-c2) 65%,
     transparent 75%,
     transparent 80%,
-    var(--arc-c0) 95%,
-    var(--arc-c1) 100%
+    var(--glow-c0) 95%,
+    var(--glow-c1) 100%
   );
   background-size: 300% 300%;
-  animation: arc-border var(--arc-duration) linear infinite;
+  animation: session-glow-sweep var(--glow-duration) linear infinite;
 }
 
-/* Flip the arc's travel direction (e.g. the Nous Portal hero row). */
-.arc-border.arc-reverse::before {
+/* Flip the sweep's travel direction (e.g. the Nous Portal hero row). */
+.session-glow.glow-reverse::before {
   animation-direction: reverse;
 }
 
-/* Nous Portal hero: slower, blue → orange arc. */
-.arc-border.arc-nous,
-:root.dark .arc-border.arc-nous {
-  --arc-c1: #4f8cff;
-  --arc-c2: #ff8c42;
-  --arc-duration: 3.27s;
+/* Nous Portal hero: slower, blue → orange sweep. */
+.session-glow.glow-nous,
+:root.dark .session-glow.glow-nous {
+  --glow-c1: #4f8cff;
+  --glow-c2: #ff8c42;
+  --glow-duration: 3.27s;
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .arc-border::before {
+  .session-glow::before {
     animation: none;
   }
 }

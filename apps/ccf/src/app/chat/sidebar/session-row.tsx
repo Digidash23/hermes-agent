@@ -179,7 +179,7 @@ export function SidebarSessionRow({
         style={style}
         {...rest}
       >
-        {isWorking && !needsInput && <span aria-hidden="true" className="arc-border" />}
+        {isWorking && !needsInput && <span aria-hidden="true" className="session-glow" />}
         <SidebarRowBody
           className={cn('z-0 group-hover:pr-12', branchStem && 'pl-3.5')}
           // Middle-click = open in a new tab (browser muscle memory). Swallow
