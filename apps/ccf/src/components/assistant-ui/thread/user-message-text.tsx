@@ -2,6 +2,8 @@ import type { FC } from 'react'
 import { Fragment, useMemo } from 'react'
 
 import { DirectiveContent } from '@/components/assistant-ui/directive-text'
+import { detectEmbed, type EmbedDescriptor, UrlEmbed } from '@/components/assistant-ui/embeds'
+import { EXPLICIT_URL_RE, normalizeExternalUrl } from '@/lib/external-link'
 import { cn } from '@/lib/utils'
 
 // User messages should render the bare-minimum of markdown: backtick `code`
@@ -11,7 +13,12 @@ import { cn } from '@/lib/utils'
 // adds a lot of runtime cost per bubble.
 //
 // Directive chips (`@file:`, `@image:`, ...) still resolve via DirectiveContent
-// inside the plain-text segments.
+// inside the plain-text segments. Bare embeddable URLs (youtu.be, etc.) also
+// resolve to a rich UrlEmbed — same detectEmbed/UrlEmbed the assistant's full
+// markdown pipeline uses (markdown-text.tsx), just detected directly off the
+// raw text here instead of via a markdown autolink AST node. Both pieces are
+// self-contained and lazy-loaded, so this doesn't pull in the heavy pipeline
+// this file otherwise avoids.
 
 interface FenceSegment {
   kind: 'fence'
@@ -123,6 +130,67 @@ export const UserMessageText: FC<UserMessageTextProps> = ({ className, text }) =
   )
 }
 
+type UrlSegment = { kind: 'embed'; descriptor: EmbedDescriptor } | { kind: 'text'; text: string }
+
+// Mirrors the "bare autolink → rich embed" check in markdown-text.tsx, minus
+// the markdown AST — there's no autolinking pass here, so bare URLs are
+// found directly against the raw text instead of via an already-parsed <a>
+// node. Desktop only (embed renderers are webview/iframe-based), matching
+// the assistant pipeline's own guard.
+function splitEmbeddableUrls(text: string): UrlSegment[] {
+  if (!window.hermesDesktop) {
+    return [{ kind: 'text', text }]
+  }
+
+  const segments: UrlSegment[] = []
+  let cursor = 0
+
+  for (const match of text.matchAll(EXPLICIT_URL_RE)) {
+    const raw = match[0]
+    const start = match.index ?? 0
+    const descriptor = detectEmbed(normalizeExternalUrl(raw))
+
+    if (!descriptor) {
+      continue
+    }
+
+    if (start > cursor) {
+      segments.push({ kind: 'text', text: text.slice(cursor, start) })
+    }
+
+    segments.push({ kind: 'embed', descriptor })
+    cursor = start + raw.length
+  }
+
+  if (segments.length === 0) {
+    return [{ kind: 'text', text }]
+  }
+
+  if (cursor < text.length) {
+    segments.push({ kind: 'text', text: text.slice(cursor) })
+  }
+
+  return segments
+}
+
+const InlineTextWithEmbeds: FC<{ text: string }> = ({ text }) => {
+  const segments = useMemo(() => splitEmbeddableUrls(text), [text])
+
+  return (
+    <>
+      {segments.map((segment, index) =>
+        segment.kind === 'embed' ? (
+          <UrlEmbed descriptor={segment.descriptor} key={`embed-${index}-${segment.descriptor.id}`} />
+        ) : (
+          // DirectiveContent still resolves @file:/@url: chips in whatever's
+          // left. It already preserves whitespace.
+          <DirectiveContent key={`text-${index}`} text={segment.text} />
+        )
+      )}
+    </>
+  )
+}
+
 const InlineSegmentView: FC<{ text: string }> = ({ text }) => {
   const nodes = useMemo(() => splitInlineCode(text), [text])
 
@@ -140,10 +208,8 @@ const InlineSegmentView: FC<{ text: string }> = ({ text }) => {
             {node.code}
           </code>
         ) : (
-          // Pass plain-text bits through DirectiveContent so @file:/@url: chips
-          // still render. DirectiveContent already preserves whitespace.
           <Fragment key={`text-${nodeIndex}`}>
-            <DirectiveContent text={node.text} />
+            <InlineTextWithEmbeds text={node.text} />
           </Fragment>
         )
       )}

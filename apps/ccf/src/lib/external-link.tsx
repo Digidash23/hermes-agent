@@ -16,7 +16,7 @@ const URL_RE =
 // surrounding text is full of filename-shaped tokens (e.g. `agent.log`,
 // `errors.log` in a /debug report) that the bare-domain branch of URL_RE would
 // otherwise mistake for domains and linkify.
-const EXPLICIT_URL_RE = /(?:https?:\/\/|www\.)[^\s<>"'`]+[^\s<>"'`.,;:!?)]/gi
+export const EXPLICIT_URL_RE = /(?:https?:\/\/|www\.)[^\s<>"'`]+[^\s<>"'`.,;:!?)]/gi
 
 const DOMAIN_RE = /^(?:www\.)?[a-z0-9](?:[a-z0-9-]*\.)+[a-z]{2,}(?::\d+)?(?:[/?#][^\s]*)?$/i
 const SKIP_PROTO_RE = /^(?:file|data|mailto|javascript|blob|chrome|about|hermes):/i
