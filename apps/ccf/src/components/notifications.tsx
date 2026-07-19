@@ -125,7 +125,7 @@ function TopCenterStack({
       <NotificationItem notification={latest} />
       {expanded && older.map(n => <NotificationItem key={n.id} notification={n} />)}
       {older.length > 0 && (
-        <div className={cn(STACK_SURFACE, 'flex min-h-8 items-center justify-between rounded-lg px-3 text-xs')}>
+        <div className={cn(STACK_SURFACE, 'flex min-h-8 items-center justify-between rounded-[12px] px-3 text-xs')}>
           <Button className="-ml-2" onClick={onToggleExpanded} size="xs" type="button" variant="text">
             {expanded ? copy.hide : copy.show} {copy.more(older.length)}
           </Button>
