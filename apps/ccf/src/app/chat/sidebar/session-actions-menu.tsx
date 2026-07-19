@@ -291,6 +291,14 @@ function useSessionActions({
       : []
 
   // DANGER — put it away / destroy it (delete stays last, destructive-red).
+  //
+  // onArchive/onDelete both remove this row from the list, which unmounts
+  // this very menu's own trigger. Calling them synchronously from onSelect
+  // races Radix's own close sequence for the dropdown — the trigger vanishes
+  // mid-close, before the portaled content finishes tearing down, and the
+  // menu's "..." trigger icon can get stranded at its last position (stray
+  // dots in a corner) instead of closing cleanly. Deferring one tick lets
+  // the menu finish closing against a still-mounted trigger first.
   const dangerItems: ItemSpec[] = [
     spec({
       disabled: !onArchive,
@@ -298,7 +306,7 @@ function useSessionActions({
       label: r.archive,
       onSelect: () => {
         triggerHaptic('selection')
-        onArchive?.()
+        setTimeout(() => onArchive?.(), 0)
       }
     }),
     {
@@ -308,7 +316,7 @@ function useSessionActions({
       label: t.common.delete,
       onSelect: () => {
         triggerHaptic('warning')
-        onDelete?.()
+        setTimeout(() => onDelete?.(), 0)
       },
       variant: 'destructive'
     }
