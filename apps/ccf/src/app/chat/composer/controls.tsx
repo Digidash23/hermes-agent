@@ -49,6 +49,7 @@ export function ComposerControls({
   disabled,
   hasComposerPayload,
   hideModelPill = false,
+  hideAutoSpeak = false,
   state,
   voiceStatus,
   onDictate,
@@ -68,6 +69,12 @@ export function ComposerControls({
    *  card instead (see composer/index.tsx) — skip it here to avoid showing
    *  it twice. */
   hideModelPill?: boolean
+  /** Split composer style renders auto-speak next to the model pill in the
+   *  row below the card instead (see composer/index.tsx) — skip it here to
+   *  avoid showing it twice. Dictation stays put: it's an input method, not
+   *  a standing preference, so it keeps living right where you're about to
+   *  type. Steer keeps its slot too, for the same "live control" reason. */
+  hideAutoSpeak?: boolean
   state: ChatBarState
   voiceStatus: VoiceStatus
   onDictate: () => void
@@ -114,7 +121,9 @@ export function ComposerControls({
       ) : (
         <DictationButton disabled={disabled} onToggle={onDictate} state={state.voice} status={voiceStatus} />
       )}
-      <AutoSpeakButton active={autoSpeak} disabled={disabled} onToggle={onToggleAutoSpeak} />
+      {!hideAutoSpeak && (
+        <AutoSpeakButton active={autoSpeak} disabled={disabled} onToggle={onToggleAutoSpeak} />
+      )}
       {showVoicePrimary ? (
         <Tip label={c.startVoice}>
           <Button
@@ -265,7 +274,15 @@ function ConversationIndicator({
 // Pure-TTS toggle: type normally, but have every assistant reply read aloud —
 // no dictation, no full conversation loop. Filled/accent when on, mirroring the
 // muted-mic pressed state above. Driven by (and persisted to) `voice.auto_tts`.
-function AutoSpeakButton({ active, disabled, onToggle }: { active: boolean; disabled: boolean; onToggle: () => void }) {
+export function AutoSpeakButton({
+  active,
+  disabled,
+  onToggle
+}: {
+  active: boolean
+  disabled: boolean
+  onToggle: () => void
+}) {
   const { t } = useI18n()
   const c = t.composer
   const label = active ? c.stopSpeakingReplies : c.speakReplies
@@ -295,7 +312,7 @@ function AutoSpeakButton({ active, disabled, onToggle }: { active: boolean; disa
   )
 }
 
-function DictationButton({
+export function DictationButton({
   disabled,
   state,
   status,

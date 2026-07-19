@@ -25,7 +25,7 @@ import { AttachmentList } from './attachments'
 import { COMPOSER_FADE_BACKGROUND, type QueueEditState, slashArgStage } from './composer-utils'
 import { ContextMenu } from './context-menu'
 import { COMPOSER_AREAS, runComposerMiddleware } from './contrib'
-import { ComposerControls } from './controls'
+import { AutoSpeakButton, ComposerControls } from './controls'
 import { COMPOSER_DROP_ACTIVE_CLASS, COMPOSER_DROP_FADE_CLASS } from './drop-affordance'
 import { markActiveComposer } from './focus'
 import { HelpHint } from './help-hint'
@@ -718,6 +718,7 @@ export function ChatBar({
       }}
       disabled={disabled}
       hasComposerPayload={hasComposerPayload}
+      hideAutoSpeak={!poppedOut && composerLayoutStyle === 'split'}
       hideModelPill={!poppedOut && composerLayoutStyle === 'split'}
       onDictate={dictate}
       onSteer={steerDraft}
@@ -1008,7 +1009,12 @@ export function ChatBar({
             </div>
             {!poppedOut && composerLayoutStyle === 'split' && (
               <div className="flex items-center justify-between px-1 pt-2">
-                <ComposerApprovalModeControl />
+                <div className="flex items-center gap-0.5">
+                  <ComposerApprovalModeControl />
+                  {!voiceConversationActive && (
+                    <AutoSpeakButton active={autoSpeak} disabled={disabled} onToggle={handleToggleAutoSpeak} />
+                  )}
+                </div>
                 <ModelPill compact={compactPill} disabled={disabled} model={state.model} />
               </div>
             )}

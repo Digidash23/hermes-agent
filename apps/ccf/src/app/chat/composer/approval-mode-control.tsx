@@ -28,7 +28,7 @@ export function ComposerApprovalModeControl() {
       <DropdownMenuTrigger asChild>
         <Button
           className={cn(
-            'h-(--composer-control-size) shrink-0 gap-1.5 rounded-full px-2.5 text-xs text-muted-foreground hover:bg-accent hover:text-foreground',
+            'h-(--composer-control-size) shrink-0 gap-1 rounded-[8px] px-2 text-xs text-muted-foreground hover:bg-accent hover:text-foreground',
             item.className
           )}
           title={item.title}
