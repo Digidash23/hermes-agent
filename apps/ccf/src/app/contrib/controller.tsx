@@ -493,8 +493,7 @@ export function ContribController() {
                 clusters instead of overlapping them — Electron's no-drag
                 carve-out of fixed/transformed elements is unreliable, so a
                 full-bar drag base kills their clicks. In-flow slot content
-                still carves via its own no-drag wrapper (the same pattern as
-                the app's session-title button). */}
+                still carves via its own no-drag wrapper. */}
             <div
               aria-hidden="true"
               className="pointer-events-none absolute inset-y-0 left-0 w-(--titlebar-controls-left,14px) [-webkit-app-region:drag]"
@@ -516,7 +515,6 @@ export function ContribController() {
                 top: 'var(--titlebar-controls-top, 6px)'
               }}
             >
-              <SessionTitleLabel />
               <Slot area="titleBar.left" />
             </div>
             <div className="pointer-events-auto absolute left-1/2 top-1/2 z-10 flex w-max -translate-x-1/2 -translate-y-1/2 items-center gap-2 [-webkit-app-region:no-drag]">
@@ -543,6 +541,12 @@ export function ContribController() {
           <div className="relative flex min-h-0 flex-1 gap-2">
             {!panesFlipped && sidebar}
             <div className="relative flex min-h-0 flex-1 flex-col pt-[34px]">
+              {/* Session title lives here, not the window-wide titlebar strip
+                  above — this div is a REAL flex sibling positioned after the
+                  sidebar by the browser, so the label needs no CSS-var-based
+                  alignment hack to start in the right place. Same 34px band
+                  as the traffic lights (this div's own pt-[34px]). */}
+              <SessionTitleLabel />
               <LayoutTreeRoot />
             </div>
             {panesFlipped && sidebar}
