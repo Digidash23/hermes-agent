@@ -20,13 +20,7 @@ import { atom, computed } from 'nanostores'
 
 import type { ClientSessionState } from '@/app/types'
 import { findGroup, findGroupOfPane } from '@/components/pane-shell/tree/model'
-import {
-  $activeTreeGroup,
-  $layoutTree,
-  moveTreePane,
-  noteActiveTreeGroup,
-  revealTreePane
-} from '@/components/pane-shell/tree/store'
+import { $activeTreeGroup, $layoutTree, noteActiveTreeGroup, revealTreePane } from '@/components/pane-shell/tree/store'
 import { readJson, writeJson } from '@/lib/storage'
 
 import { $activeGatewayProfile, normalizeProfileKey } from './profile'
@@ -139,11 +133,16 @@ const tilesByProfile = loadTilesByProfile()
 // it left the previous profile's tiles registered (phantom "Session" tabs).
 const profileKey = () => normalizeProfileKey($activeGatewayProfile.get())
 
-// Runtime ids are process-scoped — never trust a persisted one, so the live
-// atom hydrates from the stored (runtime-less) tiles for the active profile.
-// A secondary window (single-chat pop-out) shows ONLY its routed session — no
-// tiles, and no repopulation on a profile switch.
-export const $sessionTiles = atom<SessionTile[]>(isSecondaryWindow() ? [] : [...(tilesByProfile[profileKey()] ?? [])])
+// Session tiling (splitting a second chat into its own pane beside the main
+// one) is disabled for CCF — never starts populated from persisted storage,
+// regardless of what an earlier build or test session left behind there. Old
+// persisted tiles restoring themselves on launch (bypassing openSessionTile
+// entirely, since this is a direct atom initializer) was exactly what kept
+// bringing the tab-strip header back after it looked "fixed" — this and the
+// no-op in openSessionTile below are the two places tiles could ever appear
+// from, so both are permanently closed instead of only removing the visible
+// trigger.
+export const $sessionTiles = atom<SessionTile[]>([])
 
 function persistTiles() {
   // Shares the origin's storage; a secondary window holds no tiles, so a write
@@ -168,15 +167,8 @@ function saveTiles(tiles: SessionTile[]) {
   persistTiles()
 }
 
-// Profile switch: surface the new profile's tiles with runtime ids cleared so
-// they re-resume against the now-current gateway. (Fires immediately on
-// subscribe; harmless — the init value already matches.) A secondary window
-// never carries tiles, so it stays out of this entirely.
-if (!isSecondaryWindow()) {
-  $activeGatewayProfile.subscribe(() => {
-    $sessionTiles.set([...(tilesByProfile[profileKey()] ?? [])])
-  })
-}
+// Session tiling disabled — $sessionTiles is permanently empty (see above),
+// so there is nothing for a profile switch to repopulate here anymore.
 
 export function patchSessionTile(storedSessionId: string, patch: Partial<SessionTile>) {
   saveTiles($sessionTiles.get().map(t => (t.storedSessionId === storedSessionId ? { ...t, ...patch } : t)))
@@ -230,38 +222,22 @@ export function sessionTileDelegate(): SessionTileDelegate | null {
   return delegate
 }
 
-/** Open a tile for a stored session, or MOVE an existing one to the new dock
- *  (`dir`; `center` = stack into the anchor's zone, `before` = strip slot). The
- *  move path is what lets a tile's own TAB be dragged like a sidebar row — drop
- *  it on a zone/edge/strip and the tile goes there (drop-on-a-composer links
- *  instead, handled by the drag resolver). The session LOADED IN MAIN never
- *  opens as a tile (same transcript twice, fighting one runtime — silly). */
+/** Session tiling is disabled for CCF — this is the single chokepoint every
+ *  entry point funnels through (drag-to-split in session-drag.ts, the
+ *  sidebar's "..." menu, ⌘⇧T's reopenLastClosedTile, use-session-actions),
+ *  so a no-op here closes all of them at once rather than patching each
+ *  trigger site individually. $sessionTiles above is the other half — always
+ *  empty, never hydrated from persisted storage — so a tile from a much
+ *  earlier build can't silently reappear on launch either. Kept as a
+ *  same-signature no-op instead of deleting the callers so this stays cheap
+ *  to re-enable later if split-view chat ever becomes a real feature. */
 export function openSessionTile(
-  storedSessionId: string,
-  dir: TileDock = 'right',
-  anchor?: string,
-  before?: null | string
+  _storedSessionId: string,
+  _dir: TileDock = 'right',
+  _anchor?: string,
+  _before?: null | string
 ) {
-  const tiles = $sessionTiles.get()
-
-  if (storedSessionId === $selectedStoredSessionId.get()) {
-    return
-  }
-
-  if (!tiles.some(t => t.storedSessionId === storedSessionId)) {
-    saveTiles([...tiles, { anchor, before, dir, storedSessionId }])
-
-    return
-  }
-
-  // Already open: relocate the existing pane to the drop target (pane-mirror
-  // only docks on first adoption, so a re-drag must move the tree pane itself).
-  const tree = $layoutTree.get()
-  const target = tree ? findGroupOfPane(tree, anchor ?? 'workspace')?.id : null
-
-  if (target) {
-    moveTreePane(`${TILE_PANE_PREFIX}${storedSessionId}`, { before: before ?? null, groupId: target, pos: dir })
-  }
+  return
 }
 
 /** If a session is already ON SCREEN — an open tile OR the one loaded in main —
