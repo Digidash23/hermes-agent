@@ -36,8 +36,14 @@ const rowInset = cn(rowPadX, rowGap, 'flex h-full min-w-0 flex-1 items-center se
 // over the LAST 24px (fixed pixels, not a % of width) fades any clipped text
 // to transparent. Short titles that never reach that zone render untouched —
 // the mask only affects glyphs that are actually there.
+// leading-none (line-height: 1) sets the line box to exactly the font
+// size, but descenders on g/y/p/q/j extend below that box — combined
+// with overflow-hidden (needed for the truncate + mask-fade below),
+// their tails were getting clipped flat. leading-[1.3] gives just
+// enough headroom to render them fully; the row still has plenty of
+// height budget (min-h-[1.625rem] = 26px) to absorb it.
 const rowLabel =
-  'min-w-0 overflow-hidden whitespace-nowrap text-[0.8125rem] leading-none text-(--ui-text-secondary) [-webkit-mask-image:linear-gradient(to_right,black_calc(100%-24px),transparent_100%)] [mask-image:linear-gradient(to_right,black_calc(100%-24px),transparent_100%)]'
+  'min-w-0 overflow-hidden whitespace-nowrap text-[0.8125rem] leading-[1.3] text-(--ui-text-secondary) [-webkit-mask-image:linear-gradient(to_right,black_calc(100%-24px),transparent_100%)] [mask-image:linear-gradient(to_right,black_calc(100%-24px),transparent_100%)]'
 
 /** Codicon size in sidebar row leads — matches the file tree (`tree.tsx`). */
 export const SIDEBAR_LEAD_ICON_SIZE = '0.875rem' as const
