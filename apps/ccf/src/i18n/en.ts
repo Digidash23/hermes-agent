@@ -552,6 +552,7 @@ export const en: Translations = {
     envActions: {
       actionsFor: label => `Actions for ${label}`,
       credentialActions: 'Credential actions',
+      manageInKeys: 'Manage in API Keys',
       docs: 'Docs',
       hideValue: 'Hide value',
       revealValue: 'Reveal value',
@@ -831,10 +832,21 @@ export const en: Translations = {
       selectedTitle: 'Provider selected',
       selectedMessage: provider => `${provider} is now active.`,
       failedSelect: provider => `Failed to select ${provider}`,
+      webSearchActive: backend => `Search: ${backend}`,
+      webExtractActive: backend => `Extract: ${backend}`,
+      webCapabilityUnset: 'not set',
+      webUseForSearch: 'Use for Search',
+      webUseForExtract: 'Use for Extract',
+      webUsedForSearch: 'Search backend',
+      webUsedForExtract: 'Extract backend',
+      webCapabilitySelectedMessage: (provider, capability) => `${provider} now handles web ${capability}.`,
+      failedSelectCapability: provider => `Failed to set ${provider}`,
       failedLoad: 'Tool configuration failed to load',
       noProviderOptions: 'This toolset has no provider options — enable it and it works with your current setup.',
       noProviders: 'No providers are available for this toolset right now.',
       ready: 'Ready',
+      needsSignIn: 'Needs sign-in',
+      needsSetup: 'Needs setup',
       nousIncluded: 'Included with a Nous subscription — sign in to Nous Portal to activate.',
       noApiKeyRequired: 'No API key required.',
       postSetupHint: step =>
@@ -855,7 +867,20 @@ export const en: Translations = {
       modelInactiveHint: 'Select this backend first to change its model.',
       modelSelectedTitle: 'Model selected',
       modelSelectedMessage: model => `${model} applies to new sessions.`,
-      failedSelectModel: model => `Failed to select ${model}`
+      failedSelectModel: model => `Failed to select ${model}`,
+      terminalBackend: {
+        sectionTitle: 'Execution backend',
+        loading: 'Checking execution backends…',
+        failedLoad: 'Could not load terminal backends',
+        ready: 'Ready',
+        needsSetup: 'Needs setup',
+        unavailable: 'Unavailable',
+        inUse: 'In use',
+        selectedTitle: 'Backend selected',
+        selectedMessage: backend => `Terminal commands now run via ${backend}. Applies to new sessions.`,
+        failedSelect: backend => `Failed to select ${backend}`,
+        needsSetupHint: 'You can select this backend now — commands will fail until setup is complete.'
+      }
     }
   },
 
@@ -877,6 +902,9 @@ export const en: Translations = {
     noDescription: 'No description.',
     configured: 'Configured',
     needsKeys: 'Needs keys',
+    visionModelHint:
+      'Vision uses your auxiliary model configuration — the image-capable model is picked there, not per-provider here.',
+    visionModelLink: 'Choose vision model in Settings → Models',
     toolsetsEnabled: (enabled, total) => `${enabled}/${total} toolsets enabled`,
     configureToolset: label => `Configure ${label}`,
     toggleToolset: label => `Toggle ${label} toolset`,

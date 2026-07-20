@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 
+import { SETTINGS_ROUTE } from '@/app/routes'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import {
@@ -22,6 +24,7 @@ import type {
   ActionStatusResponse,
   ToolEnvVar,
   ToolProvider,
+  ToolProviderStatus,
   ToolsetConfig,
   ToolsetModelsResponse
 } from '@/types/hermes'
@@ -48,6 +51,28 @@ function providerConfigured(provider: ToolProvider, envState: Record<string, boo
   return provider.env_vars.every(ev => envState[ev.key])
 }
 
+/**
+ * Resolve the readiness pill state for a provider row. Prefers the honest
+ * server-computed `status` (keys ∧ Nous entitlement ∧ post-setup install
+ * state). Older backends don't send `status` — fall back to the legacy
+ * env-var heuristic, mapped onto the same state space (`ready` /
+ * `needs_keys`), so the pill still renders against an outdated runtime.
+ */
+function providerStatus(provider: ToolProvider, envState: Record<string, boolean>): ToolProviderStatus {
+  if (provider.status) {
+    // Env-var edits patch envState locally without a refetch — a stale
+    // server `status` must not keep saying "needs keys" (or "ready") after
+    // the user just saved (or cleared) a key in this panel.
+    if (provider.env_vars.length > 0) {
+      return provider.env_vars.every(ev => envState[ev.key]) ? 'ready' : 'needs_keys'
+    }
+
+    return provider.status
+  }
+
+  return providerConfigured(provider, envState) ? 'ready' : 'needs_keys'
+}
+
 interface EnvVarFieldProps {
   envVar: ToolEnvVar
   isSet: boolean
@@ -58,10 +83,15 @@ interface EnvVarFieldProps {
 function EnvVarField({ envVar, isSet, onSaved, onCleared }: EnvVarFieldProps) {
   const { t } = useI18n()
   const copy = t.settings.toolsets
+  const navigate = useNavigate()
   const [editing, setEditing] = useState(false)
   const [value, setValue] = useState('')
   const [revealed, setRevealed] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
+
+  // Internal route change to Settings → API Keys (tools sub-view) with the
+  // deep-link param keys-settings consumes to scroll + flash this key's card.
+  const openInKeys = () => navigate(`${SETTINGS_ROUTE}?tab=keys&key=${encodeURIComponent(envVar.key)}`)
 
   async function handleSave() {
     if (!value) {
@@ -141,6 +171,7 @@ function EnvVarField({ envVar, isSet, onSaved, onCleared }: EnvVarFieldProps) {
             label={envVar.key}
             onClear={() => void handleClear()}
             onEdit={() => setEditing(true)}
+            onManageKeys={openInKeys}
             onReveal={() => void handleReveal()}
           >
             <EnvVarActionsTrigger label={envVar.key} onClick={event => event.stopPropagation()} />
@@ -511,6 +542,36 @@ export function ToolsetConfigPanel({ toolset, onConfiguredChange }: ToolsetConfi
     onConfiguredChange?.()
   }
 
+  async function handleSelectCapability(provider: ToolProvider, capability: 'search' | 'extract') {
+    setSelecting(provider.name)
+
+    try {
+      await selectToolsetProvider(toolset, provider.name, capability)
+      // Mirror the backend write locally so the Search:/Extract: badges track
+      // the new per-capability backend without a refetch.
+      setCfg(current =>
+        current
+          ? {
+              ...current,
+              ...(capability === 'search'
+                ? { active_search_backend: provider.web_backend ?? provider.name }
+                : { active_extract_backend: provider.web_backend ?? provider.name })
+            }
+          : current
+      )
+      notify({
+        kind: 'success',
+        title: copy.selectedTitle,
+        message: copy.webCapabilitySelectedMessage(provider.name, capability)
+      })
+      onConfiguredChange?.()
+    } catch (err) {
+      notifyError(err, copy.failedSelectCapability(provider.name))
+    } finally {
+      setSelecting(null)
+    }
+  }
+
   if (loading) {
     // Inline row, not a full block loader — a big centered spinner is what
     // caused the Skills/Tools tab-switch layout jump; this reads as "more
@@ -536,9 +597,21 @@ export function ToolsetConfigPanel({ toolset, onConfiguredChange }: ToolsetConfi
 
   return (
     <div className="grid gap-2">
+      {toolset === 'web' && cfg.active_search_backend !== undefined && (
+        // The runtime dispatches web_search and web_extract independently
+        // (web.search_backend / web.extract_backend) — show which backend
+        // each capability resolves to right now.
+        <div className="flex flex-wrap items-center gap-2 px-1">
+          <Pill>{copy.webSearchActive(cfg.active_search_backend || copy.webCapabilityUnset)}</Pill>
+          <Pill>{copy.webExtractActive(cfg.active_extract_backend || copy.webCapabilityUnset)}</Pill>
+        </div>
+      )}
       {providers.map(provider => {
         const isActive = activeProvider === provider.name
-        const configured = providerConfigured(provider, envState)
+        const status = providerStatus(provider, envState)
+        const webCaps = toolset === 'web' ? (provider.capabilities ?? []) : []
+        const isSearchBackend = Boolean(provider.web_backend && cfg.active_search_backend === provider.web_backend)
+        const isExtractBackend = Boolean(provider.web_backend && cfg.active_extract_backend === provider.web_backend)
 
         return (
           <div className="overflow-hidden rounded-xl bg-background/60" key={provider.name}>
@@ -554,12 +627,16 @@ export function ToolsetConfigPanel({ toolset, onConfiguredChange }: ToolsetConfi
               <span className="flex min-w-0 items-center gap-2">
                 <span className="truncate text-sm font-medium">{provider.name}</span>
                 {provider.badge && <Pill>{provider.badge}</Pill>}
-                {configured && (
+                {status === 'ready' && (
                   <Pill tone="primary">
                     <Check className="size-3" />
                     {copy.ready}
                   </Pill>
                 )}
+                {status === 'needs_auth' && <Pill tone="warn">{copy.needsSignIn}</Pill>}
+                {status === 'needs_setup' && <Pill tone="warn">{copy.needsSetup}</Pill>}
+                {isSearchBackend && <Pill tone="primary">{copy.webUsedForSearch}</Pill>}
+                {isExtractBackend && <Pill tone="primary">{copy.webUsedForExtract}</Pill>}
               </span>
               {selecting === provider.name && <Loader2 className="size-3.5 shrink-0 animate-spin" />}
             </button>
@@ -567,6 +644,34 @@ export function ToolsetConfigPanel({ toolset, onConfiguredChange }: ToolsetConfi
             {isActive && (
               <div className="grid gap-2 bg-muted/20 p-3">
                 {provider.tag && <p className="text-[0.72rem] text-muted-foreground">{provider.tag}</p>}
+                {webCaps.length > 0 && (
+                  // Per-capability assignment: writes web.search_backend /
+                  // web.extract_backend without touching the shared
+                  // web.backend key. Hidden for capabilities the backend
+                  // can't serve (e.g. ddgs is search-only).
+                  <div className="flex flex-wrap items-center gap-1.5">
+                    {webCaps.includes('search') && (
+                      <Button
+                        disabled={selecting !== null || isSearchBackend}
+                        onClick={() => void handleSelectCapability(provider, 'search')}
+                        size="xs"
+                        variant="text"
+                      >
+                        {copy.webUseForSearch}
+                      </Button>
+                    )}
+                    {webCaps.includes('extract') && (
+                      <Button
+                        disabled={selecting !== null || isExtractBackend}
+                        onClick={() => void handleSelectCapability(provider, 'extract')}
+                        size="xs"
+                        variant="text"
+                      >
+                        {copy.webUseForExtract}
+                      </Button>
+                    )}
+                  </div>
+                )}
                 {provider.requires_nous_auth && (
                   <p className="text-[0.72rem] text-muted-foreground">{copy.nousIncluded}</p>
                 )}

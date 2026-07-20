@@ -675,6 +675,10 @@ export interface ToolEnvVar {
   is_set: boolean
 }
 
+/** Server-computed readiness for a provider picker row. Absent on older
+ *  backends that predate the truthful-readiness endpoint. */
+export type ToolProviderStatus = 'ready' | 'needs_setup' | 'needs_auth' | 'needs_keys'
+
 export interface ToolProvider {
   name: string
   badge: string
@@ -685,7 +689,20 @@ export interface ToolProvider {
   /** True when this is the provider currently written to config (mirrors the
    *  CLI `hermes tools` active-provider detection). */
   is_active: boolean
+  /** Honest readiness computed server-side (keys ∧ Nous entitlement ∧
+   *  post-setup install state). Optional for older backends. */
+  status?: ToolProviderStatus
+  /** Web toolset only: the backend key written to web.*backend config
+   *  (e.g. 'searxng'). Absent on other toolsets and older backends. */
+  web_backend?: string
+  /** Web toolset only: capabilities this backend can serve. Search-only
+   *  providers (ddgs, brave-free) report ['search']. */
+  capabilities?: WebCapability[]
 }
+
+/** A web toolset capability — the runtime dispatches web_search and
+ *  web_extract to independently configurable backends. */
+export type WebCapability = 'search' | 'extract'
 
 export interface ToolsetConfig {
   name: string
@@ -693,6 +710,35 @@ export interface ToolsetConfig {
   providers: ToolProvider[]
   /** Name of the currently active provider, or null if none is configured. */
   active_provider: string | null
+  /** Web toolset only: backend the web_search tool resolves to right now
+   *  (web.search_backend → web.backend → credential auto-detect). */
+  active_search_backend?: string | null
+  /** Web toolset only: backend the web_extract tool resolves to right now. */
+  active_extract_backend?: string | null
+}
+
+/** Health status of a terminal execution backend row.
+ *
+ *  `ready` — usable now; `needs_setup` — selectable but missing a dependency
+ *  or credential (detail says which); `unavailable` — the probe itself failed. */
+export type TerminalBackendStatus = 'ready' | 'needs_setup' | 'unavailable'
+
+/** One row from `GET /api/tools/terminal/backends`. */
+export interface TerminalBackendInfo {
+  name: string
+  label: string
+  description: string
+  /** True when this backend is the current `terminal.backend` config value. */
+  active: boolean
+  status: TerminalBackendStatus
+  /** Setup guidance / probe detail for non-ready rows (empty when ready). */
+  detail: string
+}
+
+/** Shape of `GET /api/tools/terminal/backends`. */
+export interface TerminalBackendsResponse {
+  active: string
+  backends: TerminalBackendInfo[]
 }
 
 /** One model row from a toolset backend's catalog (image/video gen). */

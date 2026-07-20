@@ -744,6 +744,7 @@ export const zh: Translations = {
     envActions: {
       actionsFor: label => `${label} 的操作`,
       credentialActions: '凭据操作',
+      manageInKeys: '在 API 密钥中管理',
       docs: '文档',
       hideValue: '隐藏值',
       revealValue: '显示值',
@@ -1016,10 +1017,22 @@ export const zh: Translations = {
       selectedTitle: '已选择提供方',
       selectedMessage: provider => `${provider} 现在处于活动状态。`,
       failedSelect: provider => `选择 ${provider} 失败`,
+      webSearchActive: backend => `搜索：${backend}`,
+      webExtractActive: backend => `提取：${backend}`,
+      webCapabilityUnset: '未设置',
+      webUseForSearch: '用于搜索',
+      webUseForExtract: '用于提取',
+      webUsedForSearch: '搜索后端',
+      webUsedForExtract: '提取后端',
+      webCapabilitySelectedMessage: (provider, capability) =>
+        `${provider} 现在负责网页${capability === 'search' ? '搜索' : '提取'}。`,
+      failedSelectCapability: provider => `无法设置 ${provider}`,
       failedLoad: '工具配置加载失败',
       noProviderOptions: '此工具集没有提供方选项；启用后即可使用当前配置。',
       noProviders: '此工具集当前没有可用提供方。',
       ready: '就绪',
+      needsSignIn: '需要登录',
+      needsSetup: '需要安装',
       nousIncluded: '包含在 Nous 订阅中；登录 Nous Portal 即可激活。',
       noApiKeyRequired: '不需要 API 密钥。',
       postSetupHint: step => `此后端需要一次性安装 (${step})。将在此机器上执行，可能需要几分钟。`,
@@ -1039,7 +1052,20 @@ export const zh: Translations = {
       modelInactiveHint: '请先选择此后端，然后再更改其模型。',
       modelSelectedTitle: '模型已选择',
       modelSelectedMessage: model => `${model} 将应用于新会话。`,
-      failedSelectModel: model => `选择 ${model} 失败`
+      failedSelectModel: model => `选择 ${model} 失败`,
+      terminalBackend: {
+        sectionTitle: '执行后端',
+        loading: '正在检查执行后端…',
+        failedLoad: '无法加载终端后端',
+        ready: '就绪',
+        needsSetup: '需要设置',
+        unavailable: '不可用',
+        inUse: '使用中',
+        selectedTitle: '已选择后端',
+        selectedMessage: backend => `终端命令现在通过 ${backend} 运行。将应用于新会话。`,
+        failedSelect: backend => `选择 ${backend} 失败`,
+        needsSetupHint: '现在即可选择此后端——但在完成设置前命令将会失败。'
+      }
     }
   },
 
@@ -1061,6 +1087,8 @@ export const zh: Translations = {
     noDescription: '暂无描述。',
     configured: '已配置',
     needsKeys: '需要密钥',
+    visionModelHint: '视觉功能使用你的辅助模型配置——支持图像的模型在那里选择，而不是在此处按提供商选择。',
+    visionModelLink: '在 设置 → 模型 中选择视觉模型',
     toolsetsEnabled: (enabled, total) => `已启用 ${enabled}/${total} 个工具集`,
     configureToolset: label => `配置 ${label}`,
     toggleToolset: label => `切换 ${label} 工具集`,

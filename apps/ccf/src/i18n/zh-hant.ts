@@ -630,6 +630,7 @@ export const zhHant = defineLocale({
     envActions: {
       actionsFor: label => `${label} 的動作`,
       credentialActions: '憑證動作',
+      manageInKeys: '在 API 金鑰中管理',
       docs: '文件',
       hideValue: '隱藏值',
       revealValue: '顯示值',
@@ -835,10 +836,22 @@ export const zhHant = defineLocale({
       selectedTitle: '已選擇提供方',
       selectedMessage: provider => `${provider} 現在處於作用中狀態。`,
       failedSelect: provider => `選擇 ${provider} 失敗`,
+      webSearchActive: backend => `搜尋：${backend}`,
+      webExtractActive: backend => `擷取：${backend}`,
+      webCapabilityUnset: '未設定',
+      webUseForSearch: '用於搜尋',
+      webUseForExtract: '用於擷取',
+      webUsedForSearch: '搜尋後端',
+      webUsedForExtract: '擷取後端',
+      webCapabilitySelectedMessage: (provider, capability) =>
+        `${provider} 現在負責網頁${capability === 'search' ? '搜尋' : '擷取'}。`,
+      failedSelectCapability: provider => `無法設定 ${provider}`,
       failedLoad: '工具設定載入失敗',
       noProviderOptions: '此工具集沒有提供方選項；啟用後即可使用目前設定。',
       noProviders: '此工具集目前沒有可用提供方。',
       ready: '就緒',
+      needsSignIn: '需要登入',
+      needsSetup: '需要安裝',
       nousIncluded: '包含在 Nous 訂閱中；登入 Nous Portal 即可啟用。',
       noApiKeyRequired: '不需要 API 金鑰。',
       postSetupHint: step => `此後端需要一次性安裝 (${step})。將在此機器上執行，可能需要幾分鐘。`,
@@ -849,7 +862,20 @@ export const zhHant = defineLocale({
       postSetupCompleteMessage: step => `已安裝 ${step}。`,
       postSetupErrorTitle: '設定完成但有錯誤',
       postSetupErrorMessage: step => `請檢查 ${step} 日誌。`,
-      postSetupFailed: step => `執行 ${step} 設定失敗`
+      postSetupFailed: step => `執行 ${step} 設定失敗`,
+      terminalBackend: {
+        sectionTitle: '執行後端',
+        loading: '正在檢查執行後端…',
+        failedLoad: '無法載入終端後端',
+        ready: '就緒',
+        needsSetup: '需要設定',
+        unavailable: '不可用',
+        inUse: '使用中',
+        selectedTitle: '已選擇後端',
+        selectedMessage: backend => `終端命令現在透過 ${backend} 執行。將套用於新工作階段。`,
+        failedSelect: backend => `選擇 ${backend} 失敗`,
+        needsSetupHint: '現在即可選擇此後端——但在完成設定前命令將會失敗。'
+      }
     }
   },
 
@@ -870,6 +896,8 @@ export const zhHant = defineLocale({
     noDescription: '無可用描述。',
     configured: '已設定',
     needsKeys: '需要金鑰',
+    visionModelHint: '視覺功能使用你的輔助模型設定——支援影像的模型在那裡選擇，而不是在此處按供應商選擇。',
+    visionModelLink: '在 設定 → 模型 中選擇視覺模型',
     toolsetsEnabled: (enabled, total) => `已啟用 ${enabled}/${total} 個工具集`,
     configureToolset: label => `設定 ${label}`,
     toggleToolset: label => `切換 ${label} 工具集`,
