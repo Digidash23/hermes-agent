@@ -1090,7 +1090,7 @@ export function ChatSidebar({
     // [data-tree-group]) applies here — full rounding/border render for real.
     <Sidebar
       className={cn(
-        'relative h-full min-w-0 overflow-hidden rounded-[12px] border text-foreground transition-none',
+        'relative h-full min-w-0 overflow-hidden rounded-[16px] border text-foreground transition-none',
         'border-(--sidebar-edge-border) opacity-100',
         // Same glass fill as the chat composer's input surface — the
         // composer's own --composer-fill var only resolves inside
