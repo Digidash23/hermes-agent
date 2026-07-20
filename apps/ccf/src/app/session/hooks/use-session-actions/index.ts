@@ -40,6 +40,7 @@ import {
   setResumeExhaustedSessionId,
   setResumeFailedSessionId,
   setSelectedStoredSessionId,
+  setSessionProfileTotals,
   setSessions,
   setSessionStartedAt,
   setSessionsTotal,
@@ -163,6 +164,22 @@ interface FreshSessionDraftOptions {
 
 function normalizeNewChatWorkspaceTarget(target: NewChatWorkspaceTarget): NewChatWorkspaceTarget {
   return typeof target === 'string' ? target.trim() || null : target
+}
+
+// Mirrors a setSessionsTotal adjustment onto the per-profile total map, so a
+// single-profile sidebar's "Load N more" footer math (scoped to
+// $sessionProfileTotals, not the flat $sessionsTotal) doesn't go stale after
+// a delete/archive and spuriously claim there's more to load than there is.
+function adjustSessionProfileTotal(profile: string | undefined, delta: number): void {
+  if (!profile) {
+    return
+  }
+
+  const key = normalizeProfileKey(profile)
+
+  setSessionProfileTotals(prev =>
+    key in prev ? { ...prev, [key]: Math.max(0, prev[key] + delta) } : prev
+  )
 }
 
 export function useSessionActions({
@@ -986,9 +1003,11 @@ export function useSessionActions({
       // still lists it until its next refresh), so grouped + flat views drop the
       // row in lockstep.
       tombstoneSessions([storedSessionId, removed?.id, removed?._lineage_root_id])
-      // Keep $sessionsTotal in sync so the sidebar's "Load N more" footer
-      // doesn't keep claiming the removed row is still on the server.
+      // Keep $sessionsTotal (and the per-profile total a single-profile view
+      // actually reads) in sync so the sidebar's "Load N more" footer doesn't
+      // keep claiming the removed row is still on the server.
       setSessionsTotal(prev => Math.max(0, prev - 1))
+      adjustSessionProfileTotal(removed?.profile, -1)
       $pinnedSessionIds.set(previousPinned.filter(id => id !== storedSessionId && id !== removedPinId))
 
       // Tear down before awaiting so the route effect can't resume the
@@ -1024,6 +1043,7 @@ export function useSessionActions({
         if (removed) {
           setSessions(prev => [removed, ...prev])
           setSessionsTotal(prev => prev + 1)
+          adjustSessionProfileTotal(removed.profile, 1)
         }
 
         untombstoneSessions([storedSessionId, removed?.id, removed?._lineage_root_id])
@@ -1083,6 +1103,7 @@ export function useSessionActions({
       // on the next refresh, so they count as "removed" for the load-more
       // footer math.
       setSessionsTotal(prev => Math.max(0, prev - 1))
+      adjustSessionProfileTotal(archived?.profile, -1)
       $pinnedSessionIds.set(previousPinned.filter(id => id !== storedSessionId && id !== archivedPinId))
 
       if (wasSelected) {
@@ -1112,6 +1133,7 @@ export function useSessionActions({
         if (archived) {
           setSessions(prev => [archived, ...prev.filter(session => !sessionMatchesStoredId(session, storedSessionId))])
           setSessionsTotal(prev => prev + 1)
+          adjustSessionProfileTotal(archived.profile, 1)
         }
 
         untombstoneSessions([storedSessionId, archived?.id, archived?._lineage_root_id])
