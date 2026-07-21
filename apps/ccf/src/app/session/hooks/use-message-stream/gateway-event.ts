@@ -51,6 +51,7 @@ import { hasSessionInfoStatePatch, sessionInfoStatePatch, SUBAGENT_EVENT_TYPES, 
 
 const COMPACTION_RESUME_EVENT_TYPES = new Set([
   'message.delta',
+  'message.interim',
   'thinking.delta',
   'reasoning.delta',
   'reasoning.available',
@@ -69,9 +70,10 @@ interface GatewayEventDeps {
   nativeSubagentSessionsRef: MutableRefObject<Set<string>>
   appendAssistantDelta: (sessionId: string, delta: string) => void
   appendReasoningDelta: (sessionId: string, delta: string, replace?: boolean) => void
-  completeAssistantMessage: (sessionId: string, text: string) => void
+  completeAssistantMessage: (sessionId: string, text: string, responsePreviewed?: boolean) => void
   failAssistantMessage: (sessionId: string, errorMessage: string) => void
   flushQueuedDeltas: (sessionId?: string) => void
+  finalizeInterimAssistantMessage: (sessionId: string, text: string) => void
   queryClient: QueryClient
   refreshHermesConfig: () => Promise<void>
   sessionInterrupted: (sessionId: string) => boolean
@@ -100,6 +102,7 @@ export function useGatewayEventHandler(deps: GatewayEventDeps) {
     completeAssistantMessage,
     failAssistantMessage,
     flushQueuedDeltas,
+    finalizeInterimAssistantMessage,
     queryClient,
     refreshHermesConfig,
     sessionInterrupted,
@@ -331,6 +334,7 @@ export function useGatewayEventHandler(deps: GatewayEventDeps) {
             awaitingResponse: true,
             sawAssistantPayload: false,
             interrupted: false,
+            interimBoundaryPending: false,
             turnStartedAt: Date.now()
           }
         })
@@ -341,6 +345,19 @@ export function useGatewayEventHandler(deps: GatewayEventDeps) {
       } else if (event.type === 'message.delta') {
         if (sessionId) {
           appendAssistantDelta(sessionId, coerceGatewayText(payload?.text))
+        }
+      } else if (event.type === 'message.interim') {
+        // The agent emitted interim assistant commentary (text alongside tool
+        // calls, or the attempted final answer before a verify-on-stop nudge).
+        // Finalize it as its own sealed bubble so message.complete doesn't wipe
+        // it — the text was already streamed via message.delta and is visible.
+        if (sessionId) {
+          flushQueuedDeltas(sessionId)
+          const text = coerceGatewayText(payload?.text)
+
+          if (text) {
+            finalizeInterimAssistantMessage(sessionId, text)
+          }
         }
       } else if (event.type === 'thinking.delta') {
         // thinking.delta carries the kawaii spinner status (face + verb from
@@ -414,7 +431,7 @@ export function useGatewayEventHandler(deps: GatewayEventDeps) {
         playCompletionSound()
 
         const finalText = coerceGatewayText(payload?.text) || coerceGatewayText(payload?.rendered)
-        completeAssistantMessage(sessionId, finalText)
+        completeAssistantMessage(sessionId, finalText, payload?.response_previewed)
 
         if (isActiveEvent) {
           setTurnStartedAt(null)
@@ -748,6 +765,7 @@ export function useGatewayEventHandler(deps: GatewayEventDeps) {
       compactedTurnRef,
       completeAssistantMessage,
       failAssistantMessage,
+      finalizeInterimAssistantMessage,
       flushQueuedDeltas,
       lastCwdInfoSessionRef,
       nativeSubagentSessionsRef,
