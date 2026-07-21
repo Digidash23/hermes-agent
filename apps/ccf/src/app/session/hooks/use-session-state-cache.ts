@@ -10,7 +10,6 @@ import {
   $busy,
   $messages,
   noteSessionActivity,
-  onSessionWatchdogClear,
   setActiveSessionStoredId,
   setCurrentFastMode,
   setCurrentModel,
@@ -317,31 +316,6 @@ export function useSessionStateCache({
 
     return runtimeState?.storedSessionId === storedSessionId ? runtimeId : null
   }, [])
-
-  // When the store watchdog force-clears a stuck session (8 min of stream
-  // silence — a hung or looping turn that never delivered its terminal event),
-  // also drop that session's busy/awaiting flags here. Clearing the sidebar dot
-  // alone leaves the composer wedged on "Thinking"/Stop; updateSessionState
-  // re-syncs `$busy` when the healed session is the one on screen.
-  useEffect(
-    () =>
-      onSessionWatchdogClear(storedSessionId => {
-        const runtimeId = runtimeIdByStoredSessionIdRef.current.get(storedSessionId)
-        const state = runtimeId ? sessionStateByRuntimeIdRef.current.get(runtimeId) : undefined
-
-        if (!runtimeId || !state?.busy) {
-          return
-        }
-
-        updateSessionState(runtimeId, current => ({
-          ...current,
-          awaitingResponse: false,
-          busy: false,
-          needsInput: false
-        }))
-      }),
-    [updateSessionState]
-  )
 
   return {
     activeSessionIdRef,

@@ -443,25 +443,28 @@ export const setSessionPickerOpen = (next: Updater<boolean>) => updateAtom($sess
 
 // Watchdog tracking — when does a "working" session count as stuck?
 // Long-running tool calls (LLM inference, long shell commands, web fetches)
-// can take a few minutes legitimately. We allow 8 minutes of complete
-// silence on the stream before clearing the working flag; in practice this
-// catches gateway hangs and dropped streams without false-positive-clearing
-// real long turns.
-const SESSION_WATCHDOG_TIMEOUT_MS = 8 * 60 * 1000
+// can take a few minutes legitimately. Silence is not completion: after 8
+// minutes of complete stream silence we mark the session "stalled" — a
+// presentation hint (softer pulse, see session-row-state.ts) that never
+// force-clears the working flag. Only an authoritative backend signal
+// (message.complete, session.info) or the reconciliation poll in
+// use-background-sync.ts's session.active_list check can end a turn; a
+// client-side timeout guessing "done" was the actual bug (#65870) — it could
+// misfire on a legitimately long tool call.
+export const SESSION_WATCHDOG_TIMEOUT_MS = 8 * 60 * 1000
 const sessionWatchdogTimers = new Map<string, ReturnType<typeof setTimeout>>()
 
-// Notified (with the stored session id) whenever the watchdog force-clears a
-// stuck session. The session-state cache subscribes to also drop that session's
-// busy/awaiting flags — clearing `$workingSessionIds` alone only removes the
-// sidebar dot, leaving the composer stuck on "Thinking"/Stop for a hung or
-// looping turn that never streamed its terminal event.
-type SessionWatchdogListener = (storedSessionId: string) => void
-const sessionWatchdogListeners = new Set<SessionWatchdogListener>()
+// Stored session ids whose authoritative state is still busy, but whose
+// runtime has produced no state publish for the watchdog window. Never
+// mutates working/busy — purely a softer visual treatment so a quiet turn
+// still reads as running, not idle.
+export const $stalledSessionIds = atom<string[]>([])
+export const setStalledSessionIds = (next: Updater<string[]>) => updateAtom($stalledSessionIds, next)
 
-export function onSessionWatchdogClear(listener: SessionWatchdogListener): () => void {
-  sessionWatchdogListeners.add(listener)
-
-  return () => void sessionWatchdogListeners.delete(listener)
+export function setSessionStalled(sessionId: string | null | undefined, stalled: boolean) {
+  if (sessionId) {
+    toggleMembership(setStalledSessionIds, sessionId, stalled)
+  }
 }
 
 function armSessionWatchdog(sessionId: string) {
@@ -477,11 +480,7 @@ function armSessionWatchdog(sessionId: string) {
     // Re-check the latest state at fire-time. If the user already navigated
     // away or the session genuinely finished, the timer is a no-op.
     if ($workingSessionIds.get().includes(sessionId)) {
-      setWorkingSessionIds(current => current.filter(id => id !== sessionId))
-    }
-
-    for (const listener of sessionWatchdogListeners) {
-      listener(sessionId)
+      setSessionStalled(sessionId, true)
     }
   }, SESSION_WATCHDOG_TIMEOUT_MS)
 
@@ -539,12 +538,14 @@ export function getRecentlySettledSessionIds(now: number = Date.now()): string[]
 }
 
 /** Call when a streaming event for a session lands. Refreshes the watchdog
- *  so the session keeps its "working" status as long as data keeps coming. */
+ *  so the session keeps its "working" status as long as data keeps coming,
+ *  and clears the quiet hint — stream activity means it's no longer stalled. */
 export function noteSessionActivity(sessionId: string | null | undefined) {
   if (!sessionId || !$workingSessionIds.get().includes(sessionId)) {
     return
   }
 
+  setSessionStalled(sessionId, false)
   armSessionWatchdog(sessionId)
 }
 
@@ -591,7 +592,10 @@ export function setSessionWorking(sessionId: string | null | undefined, working:
   toggleMembership(setWorkingSessionIds, sessionId, working)
 
   // Bookend the watchdog: arm on enter, disarm on leave. A later
-  // noteSessionActivity() from a streaming event refreshes the timer.
+  // noteSessionActivity() from a streaming event refreshes the timer. Every
+  // transition is authoritative activity, so it clears any stale quiet hint.
+  setSessionStalled(sessionId, false)
+
   if (working) {
     clearSessionSettled(sessionId)
     armSessionWatchdog(sessionId)

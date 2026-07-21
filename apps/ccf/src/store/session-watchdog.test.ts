@@ -1,6 +1,13 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { $workingSessionIds, onSessionWatchdogClear, setSessionWorking, setWorkingSessionIds } from './session'
+import {
+  $stalledSessionIds,
+  $workingSessionIds,
+  noteSessionActivity,
+  setSessionWorking,
+  setStalledSessionIds,
+  setWorkingSessionIds
+} from './session'
 
 const WATCHDOG_MS = 8 * 60 * 1000
 
@@ -8,6 +15,7 @@ describe('session watchdog', () => {
   beforeEach(() => {
     vi.useFakeTimers()
     setWorkingSessionIds(() => [])
+    setStalledSessionIds(() => [])
   })
 
   afterEach(() => {
@@ -15,45 +23,50 @@ describe('session watchdog', () => {
     vi.useRealTimers()
   })
 
-  it('drops a stuck session and notifies listeners once the silence window elapses', () => {
-    const cleared: string[] = []
-    const off = onSessionWatchdogClear(id => cleared.push(id))
-
+  it('marks a silent session stalled without pretending it finished', () => {
     setSessionWorking('s1', true)
     expect($workingSessionIds.get()).toContain('s1')
 
     vi.advanceTimersByTime(WATCHDOG_MS)
 
-    // Both the sidebar dot AND the busy-clearing signal fire — the contract
-    // that lets the composer recover from a hung/looping turn, not just the dot.
-    expect($workingSessionIds.get()).not.toContain('s1')
-    expect(cleared).toEqual(['s1'])
-
-    off()
+    // Silence is a presentation hint, not completion — the working flag
+    // (and everything downstream that reads it, e.g. the composer) must
+    // never be force-cleared by a client-side timeout guess.
+    expect($workingSessionIds.get()).toContain('s1')
+    expect($stalledSessionIds.get()).toContain('s1')
   })
 
-  it('never fires for a session that settles before the window', () => {
-    const cleared: string[] = []
-    const off = onSessionWatchdogClear(id => cleared.push(id))
-
+  it('clears stalled on new activity and rearms the watchdog', () => {
     setSessionWorking('s2', true)
-    setSessionWorking('s2', false)
-
     vi.advanceTimersByTime(WATCHDOG_MS)
+    expect($stalledSessionIds.get()).toContain('s2')
 
-    expect(cleared).toEqual([])
+    noteSessionActivity('s2')
+    expect($stalledSessionIds.get()).not.toContain('s2')
 
-    off()
+    vi.advanceTimersByTime(WATCHDOG_MS - 1)
+    expect($stalledSessionIds.get()).not.toContain('s2')
+    expect($workingSessionIds.get()).toContain('s2')
   })
 
-  it('stops notifying after unsubscribe', () => {
-    const cleared: string[] = []
-    const off = onSessionWatchdogClear(id => cleared.push(id))
-    off()
-
+  it('clears stalled on an authoritative terminal transition', () => {
     setSessionWorking('s3', true)
     vi.advanceTimersByTime(WATCHDOG_MS)
+    expect($stalledSessionIds.get()).toContain('s3')
 
-    expect(cleared).toEqual([])
+    setSessionWorking('s3', false)
+
+    expect($workingSessionIds.get()).not.toContain('s3')
+    expect($stalledSessionIds.get()).not.toContain('s3')
+  })
+
+  it('never marks a session stalled when it settles before the window', () => {
+    setSessionWorking('s4', true)
+    setSessionWorking('s4', false)
+
+    vi.advanceTimersByTime(WATCHDOG_MS)
+
+    expect($workingSessionIds.get()).not.toContain('s4')
+    expect($stalledSessionIds.get()).not.toContain('s4')
   })
 })
