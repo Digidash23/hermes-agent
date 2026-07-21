@@ -84,11 +84,13 @@ function buildTileView(storedSessionId: string): SessionView {
     $awaitingResponse: computed($state, state => Boolean(state?.awaitingResponse)),
     $busy: computed($state, state => Boolean(state?.busy)),
     $cwd: computed($state, state => state?.cwd ?? ''),
+    $fast: computed($state, state => Boolean(state?.fast)),
     $lastVisibleIsUser: computed($messages, lastVisibleMessageIsUser),
     $messages,
     $messagesEmpty: computed($messages, messages => messages.length === 0),
     $model: computed($state, state => state?.model ?? ''),
     $provider: computed($state, state => state?.provider ?? ''),
+    $reasoningEffort: computed($state, state => state?.reasoningEffort ?? ''),
     $runtimeId,
     // Constant for the tile's lifetime — a plain atom, not a computed.
     $storedId: atom(storedSessionId)
