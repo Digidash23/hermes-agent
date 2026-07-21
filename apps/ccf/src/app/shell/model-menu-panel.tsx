@@ -1,6 +1,6 @@
 import { useStore } from '@nanostores/react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { createContext, useContext, useMemo, useState } from 'react'
+import { createContext, useContext, useEffect, useMemo, useState } from 'react'
 
 import { Codicon } from '@/components/ui/codicon'
 import {
@@ -17,6 +17,7 @@ import {
 import { Skeleton } from '@/components/ui/skeleton'
 import type { HermesGateway } from '@/hermes'
 import { useI18n } from '@/i18n'
+import { ChevronDown, ChevronRight } from '@/lib/icons'
 import { requestModelOptions } from '@/lib/model-options'
 import {
   currentPickerSelection,
@@ -36,6 +37,7 @@ import {
   modelVisibilityKey,
   setModelVisibilityOpen
 } from '@/store/model-visibility'
+import { $collapsedProviders, pruneStaleCollapsed, toggleCollapsedProvider } from '@/store/provider-collapse'
 import {
   $activeSessionId,
   $currentFastMode,
@@ -80,6 +82,7 @@ export function ModelMenuPanel({ gateway, onSelectModel, requestGateway }: Model
   const currentReasoningEffort = useStore($currentReasoningEffort)
   const modelPresets = useStore($modelPresets)
   const visibleModels = useStore($visibleModels)
+  const collapsedProviders = useStore($collapsedProviders)
 
   const modelOptions = useQuery({
     queryKey: ['model-options', activeSessionId || 'global'],
@@ -117,6 +120,14 @@ export function ModelMenuPanel({ gateway, onSelectModel, requestGateway }: Model
     () => providers?.filter(provider => provider.slug.toLowerCase() !== 'moa') ?? [],
     [providers]
   )
+
+  // Drop stale collapsed provider slugs when the provider list changes
+  // (e.g. after Refresh Models, plugin install/uninstall).
+  useEffect(() => {
+    if (pickerProviders.length > 0) {
+      pruneStaleCollapsed(pickerProviders.map(p => p.slug))
+    }
+  }, [pickerProviders])
 
   const effectiveVisibleModels = useMemo(
     () => effectiveVisibleKeys(visibleModels, pickerProviders),
@@ -230,10 +241,30 @@ export function ModelMenuPanel({ gateway, onSelectModel, requestGateway }: Model
         </DropdownMenuItem>
       ) : (
         <div className="max-h-[max(150px,30dvh)] overflow-y-auto py-0.5">
-          {groups.map(group => (
-            <DropdownMenuGroup className="py-0.5" key={group.provider.slug}>
-              <DropdownMenuLabel className={dropdownMenuSectionLabel}>{group.provider.name}</DropdownMenuLabel>
-              {group.families.map(family => {
+          {groups.map(group => {
+            const slug = group.provider.slug
+            // Collapsed when stored + no active search + not the current provider.
+            const collapsed = collapsedProviders.includes(slug) && !search && slug !== optionsProvider
+
+            return (
+              <DropdownMenuGroup className="py-0.5" key={slug}>
+                <DropdownMenuItem
+                  className={cn(dropdownMenuSectionLabel, 'cursor-pointer hover:bg-(--ui-control-active-background)')}
+                  onSelect={event => {
+                    event.preventDefault()
+                    toggleCollapsedProvider(slug)
+                  }}
+                  textValue=""
+                >
+                  {collapsed ? (
+                    <ChevronRight className="size-2.5 shrink-0" />
+                  ) : (
+                    <ChevronDown className="size-2.5 shrink-0" />
+                  )}
+                  {group.provider.name}
+                </DropdownMenuItem>
+                {!collapsed &&
+                  group.families.map(family => {
                 // The active id may be the base or its -fast sibling; either
                 // way this one family row represents both.
                 const activeId =
@@ -317,8 +348,9 @@ export function ModelMenuPanel({ gateway, onSelectModel, requestGateway }: Model
                   </DropdownMenuSub>
                 )
               })}
-            </DropdownMenuGroup>
-          ))}
+              </DropdownMenuGroup>
+            )
+          })}
         </div>
       )}
 
