@@ -482,7 +482,15 @@ export function useGatewayBoot({
           message: translateNow('boot.steps.loadingSessions'),
           progress: 99
         })
-        await callbacksRef.current.refreshSessions()
+        // Session-list population is never boot-fatal. The gateway WS is
+        // already open by this point — a failed sidebar fetch (transient
+        // blip, or an endpoint the fallback couldn't cover) must leave the
+        // app usable with an empty sidebar (the reconnect/turn refreshes
+        // retry it), not brick boot behind the "Hermes couldn't start"
+        // overlay. Matches the reconnect + softSwitch call sites.
+        await callbacksRef.current.refreshSessions().catch(() => {
+          setSessionsLoading(false)
+        })
         completeDesktopBoot()
         bootCompleted = true
       } catch (err) {
