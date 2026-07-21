@@ -85,16 +85,17 @@ function measuredMaxWidth(handleEl: HTMLElement): number {
 
 export function BrowserWorkstationResizeHandle({ side }: { side: 'left' | 'right' }) {
   const width = useStore($browserWorkstationWidth)
+  // The overflow check below only fires when something it's watching changes.
+  // It needs to watch the sidebar too, not just its own width — opening the
+  // sidebar shrinks the same shared row exactly the way dragging this panel
+  // wider does, so it's the same overflow risk, not a separate case.
+  const sidebarOpen = useStore($sidebarOpen)
+  const sidebarWidth = useStore($ccfSidebarWidth)
   const dragStart = useRef<null | { pointerX: number; width: number }>(null)
   const handleRef = useRef<HTMLDivElement>(null)
+  const isDraggingRef = useRef(false)
 
-  // Safety net, not just a prediction: measuredMaxWidth's estimate of how much
-  // room the main content zone needs can still be wrong (it's a floor we
-  // don't directly control — see the comment above measuredMaxWidth). This
-  // runs after every actual render and checks the REAL rendered geometry; if
-  // the panel overflowed anyway, it corrects by exactly the measured overflow
-  // instead of the guess ever leaving a persistent gap.
-  useEffect(() => {
+  const correctOverflow = useCallback(() => {
     const wrapperEl = handleRef.current?.parentElement
     const containerEl = wrapperEl?.parentElement
 
@@ -105,13 +106,31 @@ export function BrowserWorkstationResizeHandle({ side }: { side: 'left' | 'right
     const overflow = wrapperEl.getBoundingClientRect().right - containerEl.getBoundingClientRect().right
 
     if (overflow > 0.5) {
-      $browserWorkstationWidth.set(Math.max(BROWSER_WORKSTATION_DEFAULT_WIDTH, width - overflow))
+      $browserWorkstationWidth.set(Math.max(BROWSER_WORKSTATION_DEFAULT_WIDTH, $browserWorkstationWidth.get() - overflow))
     }
-  }, [width])
+  }, [])
+
+  // Safety net, not just a prediction: measuredMaxWidth's estimate of how much
+  // room the main content zone needs can still be wrong (it's a floor we
+  // don't directly control — see the comment above measuredMaxWidth). This
+  // checks the REAL rendered geometry after a width change and corrects any
+  // overflow by exactly the measured amount. Stands down while an active drag
+  // is in progress: onMove's own live-measured clamp is already authoritative
+  // there, and this effect firing on the SAME render would fight it pixel by
+  // pixel on every single pointermove — visible as the panel jittering/
+  // shaking while dragging instead of moving smoothly.
+  useEffect(() => {
+    if (isDraggingRef.current) {
+      return
+    }
+
+    correctOverflow()
+  }, [width, sidebarOpen, sidebarWidth, correctOverflow])
 
   const onPointerDown = useCallback(
     (event: ReactPointerEvent<HTMLDivElement>) => {
       event.preventDefault()
+      isDraggingRef.current = true
       dragStart.current = { pointerX: event.clientX, width: $browserWorkstationWidth.get() }
       event.currentTarget.setPointerCapture(event.pointerId)
 
@@ -141,14 +160,20 @@ export function BrowserWorkstationResizeHandle({ side }: { side: 'left' | 'right
 
       const onUp = () => {
         dragStart.current = null
+        isDraggingRef.current = false
         window.removeEventListener('pointermove', onMove)
         window.removeEventListener('pointerup', onUp)
+        // The drag's own clamp is a prediction; run the real-geometry check
+        // once more now that dragging has stopped and stopped suppressing it.
+        // Deferred a frame so this reads post-render layout, not whatever was
+        // on screen the instant before the last width update painted.
+        requestAnimationFrame(correctOverflow)
       }
 
       window.addEventListener('pointermove', onMove)
       window.addEventListener('pointerup', onUp)
     },
-    [side]
+    [side, correctOverflow]
   )
 
   return (
