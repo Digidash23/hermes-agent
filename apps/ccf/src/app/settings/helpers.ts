@@ -1,5 +1,5 @@
 import { asText } from '@/lib/text'
-import type { HermesConfigRecord, ToolsetInfo } from '@/types/hermes'
+import type { ConfigFieldSchema, HermesConfigRecord, ToolsetInfo } from '@/types/hermes'
 
 import { BUILTIN_PERSONALITIES, ENUM_OPTIONS, PROVIDER_GROUPS } from './constants'
 
@@ -95,6 +95,22 @@ export function getNested(obj: HermesConfigRecord, path: string): unknown {
   }
 
   return cur
+}
+
+export function inferFieldSchema(value: unknown): ConfigFieldSchema {
+  if (typeof value === 'boolean') {
+    return { type: 'boolean' }
+  }
+
+  if (typeof value === 'number') {
+    return { type: 'number' }
+  }
+
+  if (Array.isArray(value)) {
+    return { type: 'list' }
+  }
+
+  return { type: 'string' }
 }
 
 export function setNested(obj: HermesConfigRecord, path: string, value: unknown): HermesConfigRecord {
