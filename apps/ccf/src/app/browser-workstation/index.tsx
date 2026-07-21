@@ -1,5 +1,5 @@
 import { useStore } from '@nanostores/react'
-import { useEffect, useRef, useState } from 'react'
+import { memo, useEffect, useRef, useState } from 'react'
 
 import { Button } from '@/components/ui/button'
 import { Codicon } from '@/components/ui/codicon'
@@ -7,9 +7,9 @@ import { Input } from '@/components/ui/input'
 import { Tip } from '@/components/ui/tooltip'
 import { cn } from '@/lib/utils'
 import {
-  type BrowserTab,
   $browserTabs,
   $effectiveActiveBrowserTabId,
+  type BrowserTab,
   closeBrowserTab,
   closeBrowserWorkstation,
   openBrowserTab,
@@ -18,6 +18,8 @@ import {
   setBrowserTabTitle,
   setBrowserTabUrl
 } from '@/store/browser-workstation'
+
+import { BrowserWorkstationResizeHandle, useBrowserWorkstationWidth } from '../shell/browser-workstation-resize'
 
 type WebviewEl = HTMLElement & {
   canGoBack?(): boolean
@@ -42,12 +44,30 @@ function normalizeUrlOrSearch(input: string): string {
     : `https://www.google.com/search?q=${encodeURIComponent(trimmed)}`
 }
 
+// Owns the width subscription so dragging the resize handle only re-renders
+// this small wrapper, not the whole app shell. ContribController used to call
+// useBrowserWorkstationWidth() itself, which meant every pointermove during a
+// drag re-rendered the ENTIRE shell — sidebar, chat panes, titlebar, all of
+// it — since they're all part of the same component tree underneath it.
+// BrowserWorkstationPanel is memoized (it takes no props) specifically so
+// THIS component re-rendering for its own width doesn't cascade into it too.
+export function BrowserWorkstationDock() {
+  const width = useBrowserWorkstationWidth()
+
+  return (
+    <div className="relative h-full shrink-0" style={{ width: `${width}px` }}>
+      <BrowserWorkstationPanel />
+      <BrowserWorkstationResizeHandle side="left" />
+    </div>
+  )
+}
+
 // Mirrors ChatSidebar's exact floating-card treatment (see chat/sidebar/index.tsx)
 // so the two read as the same physical object on opposite edges of the window.
 // Deliberately rendered OUTSIDE the pane tree (see contrib/controller.tsx) —
 // the tree's seam-invariant CSS zeroes border-radius/borders on anything
 // docked inside it, which is why this can't be a registered tree pane.
-export function BrowserWorkstationPanel() {
+const BrowserWorkstationPanel = memo(function BrowserWorkstationPanel() {
   const tabs = useStore($browserTabs)
   const activeTabId = useStore($effectiveActiveBrowserTabId)
   // Per-tab webview elements, keyed by tab id — the nav buttons live in this
@@ -169,7 +189,7 @@ export function BrowserWorkstationPanel() {
       ))}
     </div>
   )
-}
+})
 
 function BrowserTabChip({ active, tab }: { active: boolean; tab: BrowserTab }) {
   return (
@@ -218,6 +238,7 @@ function BrowserTabView({
 }) {
   const [searchValue, setSearchValue] = useState('')
   const webviewRef = useRef<WebviewEl>(null)
+  const hasNavigated = Boolean(tab.url)
 
   // The webview only mounts once tab.url goes from empty to set (the two
   // branches below are different element trees) — this registers/unregisters
@@ -226,7 +247,7 @@ function BrowserTabView({
     onWebviewRef(webviewRef.current)
 
     return () => onWebviewRef(null)
-  }, [Boolean(tab.url), onWebviewRef])
+  }, [hasNavigated, onWebviewRef])
 
   useEffect(() => {
     const webview = webviewRef.current

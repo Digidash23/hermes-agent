@@ -1,13 +1,9 @@
 import { useStore } from '@nanostores/react'
 import type { CSSProperties, ReactElement, PointerEvent as ReactPointerEvent } from 'react'
 
-import { BrowserWorkstationPanel } from '@/app/browser-workstation'
+import { BrowserWorkstationDock } from '@/app/browser-workstation'
 import { PREVIEW_RAIL_MAX_WIDTH, PREVIEW_RAIL_MIN_WIDTH } from '@/app/chat/right-rail'
 import { PALETTE_AREA, type PaletteContribution } from '@/app/command-palette/contrib'
-import {
-  BrowserWorkstationResizeHandle,
-  useBrowserWorkstationWidth
-} from '@/app/shell/browser-workstation-resize'
 import { CcfSidebarResizeHandle, useCcfSidebarWidth } from '@/app/shell/ccf-sidebar-resize'
 import { SessionTitleLabel } from '@/app/shell/session-title-label'
 import { type StatusbarItem } from '@/app/shell/statusbar-controls'
@@ -465,7 +461,6 @@ export function ContribController() {
   const panesFlipped = useStore($panesFlipped)
   const sidebarWidth = useCcfSidebarWidth()
   const browserWorkstationOpen = useStore($browserWorkstationOpen)
-  const browserWorkstationWidth = useBrowserWorkstationWidth()
 
   const sidebar = sidebarOpen ? (
     <div className="relative h-full shrink-0" style={{ width: `${sidebarWidth}px` }}>
@@ -474,14 +469,14 @@ export function ContribController() {
     </div>
   ) : null
 
-  // Same floating-card treatment as the sidebar, same "outside the pane tree"
-  // placement — see BrowserWorkstationPanel for why it can't be a tree pane.
-  const browserWorkstation = browserWorkstationOpen ? (
-    <div className="relative h-full shrink-0" style={{ width: `${browserWorkstationWidth}px` }}>
-      <BrowserWorkstationPanel />
-      <BrowserWorkstationResizeHandle side="left" />
-    </div>
-  ) : null
+  // BrowserWorkstationDock owns its own width subscription (see
+  // browser-workstation/index.tsx) instead of that width being read here —
+  // reading it in ContribController meant every pointermove while dragging
+  // the resize handle re-rendered this ENTIRE component, including the whole
+  // pane tree underneath it. Same floating-card treatment as the sidebar,
+  // same "outside the pane tree" placement — see BrowserWorkstationPanel for
+  // why it can't be a tree pane.
+  const browserWorkstation = browserWorkstationOpen ? <BrowserWorkstationDock /> : null
 
   return (
     <SidebarProvider

@@ -1,5 +1,5 @@
 import { useStore } from '@nanostores/react'
-import { type PointerEvent as ReactPointerEvent, useCallback, useEffect, useRef } from 'react'
+import { memo, type PointerEvent as ReactPointerEvent, useCallback, useEffect, useRef } from 'react'
 
 import { type Codec, persistentAtom } from '@/lib/persisted'
 import { cn } from '@/lib/utils'
@@ -125,7 +125,14 @@ function measuredMaxWidth(handleEl: HTMLElement): number {
   return Math.min(BROWSER_WORKSTATION_MAX_WIDTH, Math.max(BROWSER_WORKSTATION_DEFAULT_WIDTH, available))
 }
 
-export function BrowserWorkstationResizeHandle({ side }: { side: 'left' | 'right' }) {
+// Memoized so it doesn't re-render just because its parent (the width-driven
+// wrapper) does — side is the only prop and it's a stable string literal, so
+// this effectively only re-renders for its own internal state changes.
+export const BrowserWorkstationResizeHandle = memo(function BrowserWorkstationResizeHandle({
+  side
+}: {
+  side: 'left' | 'right'
+}) {
   const width = useStore($browserWorkstationWidth)
   // The overflow check below only fires when something it's watching changes.
   // It needs to watch the sidebar too, not just its own width — opening the
@@ -238,4 +245,4 @@ export function BrowserWorkstationResizeHandle({ side }: { side: 'left' | 'right
       <span className="absolute left-1/2 top-1/2 h-14 w-1.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-transparent transition-colors group-hover:bg-(--ui-sash-hover-border)" />
     </div>
   )
-}
+})
