@@ -49,7 +49,7 @@ export function SessionTitleLabel() {
       }}
     >
       <Codicon className="shrink-0 text-muted-foreground/85" name="device-desktop" size="0.875rem" />
-      <span className="max-w-60 truncate text-[0.8125rem] font-medium leading-none text-foreground">
+      <span className="max-w-60 truncate text-[0.8125rem] font-medium leading-[1.3] text-foreground">
         {sessionTitle(activeStoredSession)}
       </span>
     </span>

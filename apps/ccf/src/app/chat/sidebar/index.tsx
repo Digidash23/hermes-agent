@@ -1218,7 +1218,15 @@ export function ChatSidebar({
         )}
 
         {showSessionSections && (
-          <div className={cn('flex min-h-0 flex-1 flex-col pb-1.75', SCROLL_Y)}>
+          <div
+            className={cn(
+              'flex min-h-0 flex-1 flex-col pb-1.75',
+              SCROLL_Y,
+              // Fade the last ~32px into the sidebar background as content
+              // scrolls under the account rail, instead of a hard cutoff.
+              '[-webkit-mask-image:linear-gradient(to_bottom,black_calc(100%-32px),transparent_100%)] [mask-image:linear-gradient(to_bottom,black_calc(100%-32px),transparent_100%)]'
+            )}
+          >
             {trimmedQuery && (
               <SidebarSessionsSection
                 activeSessionId={activeSidebarSessionId}

@@ -559,11 +559,13 @@ const MACOS_TRAFFIC_LIGHTS_HEIGHT = 14
 // (see contrib/controller.tsx) — the Y axis still needs that shift so the
 // lights land inside the sidebar card's header instead of the void above it.
 // X stays close to the void's own edge (not stacked on top of the original
-// 24px macOS default) — pushed left, not right, into the card.
+// 24px macOS default) — pushed left, not right, into the card. Nudged from 15
+// after the card's own corner radius went 12px -> 16px, which tightened the
+// clearance between the lights and the now-more-pronounced curve.
 const FLOATING_CHROME_INSET = 8
 
 const WINDOW_BUTTON_POSITION = {
-  x: 15,
+  x: 20,
   y: TITLEBAR_HEIGHT / 2 - MACOS_TRAFFIC_LIGHTS_HEIGHT / 2 + FLOATING_CHROME_INSET
 }
 
