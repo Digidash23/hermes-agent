@@ -1,4 +1,5 @@
 import { useStore } from '@nanostores/react'
+import { atom } from 'nanostores'
 import { memo, type PointerEvent as ReactPointerEvent, useCallback, useEffect, useRef } from 'react'
 
 import { type Codec, persistentAtom } from '@/lib/persisted'
@@ -35,6 +36,16 @@ export const $browserWorkstationWidth = persistentAtom(
   numberCodec
 )
 
+// persistentAtom writes to localStorage synchronously on every .set() (see
+// lib/persisted.ts) — fine for occasional writes, but calling it on every
+// single pointermove during a drag means doing synchronous storage I/O
+// 60-120+ times a second, which is real, measurable work sitting between the
+// mouse and the screen. That's what was making the drag feel like it wasn't
+// tracking the pointer exactly. This plain, non-persisted atom holds the
+// live in-progress width instead — cheap in-memory updates during the drag,
+// with the actual persisted write happening exactly once, on release.
+export const $browserWorkstationLiveWidth = atom<null | number>(null)
+
 // Fallback for contexts with no live container to measure (e.g. the initial
 // render before any drag has happened). window.innerWidth here needs the
 // shell's own p-2 (8px each side = 16px) subtracted too, since — unlike a
@@ -58,7 +69,12 @@ const clampWidth = (width: number) => {
 }
 
 export function useBrowserWorkstationWidth(): number {
-  return clampWidth(useStore($browserWorkstationWidth))
+  const liveWidth = useStore($browserWorkstationLiveWidth)
+  const persistedWidth = useStore($browserWorkstationWidth)
+
+  // The live value is already clamped by onMove as it's produced — re-clamping
+  // it here would just repeat that work on every render for no reason.
+  return liveWidth ?? clampWidth(persistedWidth)
 }
 
 // The main content wrapper is the only sibling with no inline width — the
@@ -200,7 +216,10 @@ export const BrowserWorkstationResizeHandle = memo(function BrowserWorkstationRe
         const next = side === 'right' ? dragStart.current.width + delta : dragStart.current.width - delta
         const clamped = Math.min(max, Math.max(BROWSER_WORKSTATION_DEFAULT_WIDTH, next))
 
-        $browserWorkstationWidth.set(clamped)
+        // Live, non-persisted value during the drag — see
+        // $browserWorkstationLiveWidth for why this isn't writing to the
+        // persisted atom on every move.
+        $browserWorkstationLiveWidth.set(clamped)
 
         // Re-anchor the moment the clamp actually engages. Without this the
         // pointer keeps banking distance past the ceiling/floor while
@@ -213,6 +232,15 @@ export const BrowserWorkstationResizeHandle = memo(function BrowserWorkstationRe
       }
 
       const onUp = () => {
+        // Commit exactly once, here — not on every move — so the localStorage
+        // write only happens when the drag actually ends.
+        const liveWidth = $browserWorkstationLiveWidth.get()
+
+        if (liveWidth !== null) {
+          $browserWorkstationWidth.set(liveWidth)
+          $browserWorkstationLiveWidth.set(null)
+        }
+
         dragStart.current = null
         isDraggingRef.current = false
         window.removeEventListener('pointermove', onMove)
