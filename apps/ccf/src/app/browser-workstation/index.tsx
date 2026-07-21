@@ -8,6 +8,7 @@ import { Tip } from '@/components/ui/tooltip'
 import { cn } from '@/lib/utils'
 import {
   $browserTabs,
+  $browserWorkstationFullscreen,
   $effectiveActiveBrowserTabId,
   type BrowserTab,
   closeBrowserTab,
@@ -16,7 +17,8 @@ import {
   setActiveBrowserTab,
   setBrowserTabFavicon,
   setBrowserTabTitle,
-  setBrowserTabUrl
+  setBrowserTabUrl,
+  toggleBrowserWorkstationFullscreen
 } from '@/store/browser-workstation'
 
 import { BrowserWorkstationResizeHandle, useBrowserWorkstationWidth } from '../shell/browser-workstation-resize'
@@ -53,6 +55,20 @@ function normalizeUrlOrSearch(input: string): string {
 // THIS component re-rendering for its own width doesn't cascade into it too.
 export function BrowserWorkstationDock() {
   const width = useBrowserWorkstationWidth()
+  const fullscreen = useStore($browserWorkstationFullscreen)
+
+  if (fullscreen) {
+    // Fixed overlay covering the whole window, same p-2 inset as the shell
+    // itself uses — bypasses the flex row and its width math entirely rather
+    // than trying to make the drag-resize width math also account for a
+    // "take everything" state. No resize handle: dragging doesn't mean
+    // anything while the panel already fills the screen.
+    return (
+      <div className="fixed inset-0 z-[100] p-2">
+        <BrowserWorkstationPanel />
+      </div>
+    )
+  }
 
   return (
     <div className="relative h-full shrink-0" style={{ width: `${width}px` }}>
@@ -70,6 +86,7 @@ export function BrowserWorkstationDock() {
 const BrowserWorkstationPanel = memo(function BrowserWorkstationPanel() {
   const tabs = useStore($browserTabs)
   const activeTabId = useStore($effectiveActiveBrowserTabId)
+  const fullscreen = useStore($browserWorkstationFullscreen)
   // Per-tab webview elements, keyed by tab id — the nav buttons live in this
   // shared header row now, so they need to reach whichever tab is active.
   const webviewsRef = useRef(new Map<string, WebviewEl>())
@@ -164,6 +181,17 @@ const BrowserWorkstationPanel = memo(function BrowserWorkstationPanel() {
             variant="ghost"
           >
             <Codicon name="refresh" size="0.8125rem" />
+          </Button>
+        </Tip>
+        <Tip label={fullscreen ? 'Exit full screen' : 'Full screen'}>
+          <Button
+            aria-label={fullscreen ? 'Exit full screen' : 'Full screen'}
+            className={HEADER_ACTION_CLASS}
+            onClick={toggleBrowserWorkstationFullscreen}
+            size="icon-xs"
+            variant="ghost"
+          >
+            <Codicon name={fullscreen ? 'screen-normal' : 'screen-full'} size="0.75rem" />
           </Button>
         </Tip>
         <Tip label="Close">

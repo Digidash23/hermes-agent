@@ -1,4 +1,4 @@
-import { computed } from 'nanostores'
+import { atom, computed } from 'nanostores'
 
 import { Codecs, persistentAtom } from '@/lib/persisted'
 
@@ -49,6 +49,11 @@ function sanitizeTabs(value: unknown): BrowserTab[] {
 
 export const $browserWorkstationOpen = persistentAtom('hermes.desktop.browserWorkstation.open', false, Codecs.bool)
 
+// Not persisted — same as a real browser, fullscreen is a transient view
+// state you re-enter each time, not something that should silently reopen
+// exactly as you left it on the next launch.
+export const $browserWorkstationFullscreen = atom(false)
+
 export const $browserTabs = persistentAtom<BrowserTab[]>(
   'hermes.desktop.browserWorkstation.tabs',
   [makeTab()],
@@ -73,6 +78,11 @@ export function toggleBrowserWorkstation() {
 
 export function closeBrowserWorkstation() {
   $browserWorkstationOpen.set(false)
+  $browserWorkstationFullscreen.set(false)
+}
+
+export function toggleBrowserWorkstationFullscreen() {
+  $browserWorkstationFullscreen.set(!$browserWorkstationFullscreen.get())
 }
 
 export function setActiveBrowserTab(id: string) {
