@@ -1,8 +1,13 @@
 import { useStore } from '@nanostores/react'
 import type { CSSProperties, ReactElement, PointerEvent as ReactPointerEvent } from 'react'
 
+import { BrowserWorkstationPanel } from '@/app/browser-workstation'
 import { PREVIEW_RAIL_MAX_WIDTH, PREVIEW_RAIL_MIN_WIDTH } from '@/app/chat/right-rail'
 import { PALETTE_AREA, type PaletteContribution } from '@/app/command-palette/contrib'
+import {
+  BrowserWorkstationResizeHandle,
+  useBrowserWorkstationWidth
+} from '@/app/shell/browser-workstation-resize'
 import { CcfSidebarResizeHandle, useCcfSidebarWidth } from '@/app/shell/ccf-sidebar-resize'
 import { SessionTitleLabel } from '@/app/shell/session-title-label'
 import { type StatusbarItem } from '@/app/shell/statusbar-controls'
@@ -24,6 +29,7 @@ import { registry } from '@/contrib/registry'
 import { discoverRuntimePlugins } from '@/contrib/runtime-loader'
 import { sessionTitle as storedSessionTitle } from '@/lib/chat-runtime'
 import { Brain, Clock, Command, LayoutDashboard } from '@/lib/icons'
+import { $browserWorkstationOpen } from '@/store/browser-workstation'
 import {
   $panesFlipped,
   $sidebarOpen,
@@ -458,11 +464,22 @@ export function ContribController() {
   const sidebarOpen = useStore($sidebarOpen)
   const panesFlipped = useStore($panesFlipped)
   const sidebarWidth = useCcfSidebarWidth()
+  const browserWorkstationOpen = useStore($browserWorkstationOpen)
+  const browserWorkstationWidth = useBrowserWorkstationWidth()
 
   const sidebar = sidebarOpen ? (
     <div className="relative h-full shrink-0" style={{ width: `${sidebarWidth}px` }}>
       <WiredPane part="sidebar" />
       <CcfSidebarResizeHandle side={panesFlipped ? 'left' : 'right'} />
+    </div>
+  ) : null
+
+  // Same floating-card treatment as the sidebar, same "outside the pane tree"
+  // placement — see BrowserWorkstationPanel for why it can't be a tree pane.
+  const browserWorkstation = browserWorkstationOpen ? (
+    <div className="relative h-full shrink-0" style={{ width: `${browserWorkstationWidth}px` }}>
+      <BrowserWorkstationPanel />
+      <BrowserWorkstationResizeHandle side="left" />
     </div>
   ) : null
 
@@ -555,6 +572,7 @@ export function ContribController() {
               <LayoutTreeRoot />
             </div>
             {panesFlipped && sidebar}
+            {browserWorkstation}
           </div>
 
           {/* "Close running tab?" — the busy/input-blocked tile close gate. */}

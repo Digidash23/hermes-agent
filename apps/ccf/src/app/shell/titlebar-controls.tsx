@@ -8,6 +8,7 @@ import { Tip, TipKeybindLabel } from '@/components/ui/tooltip'
 import { useI18n } from '@/i18n'
 import { triggerHaptic } from '@/lib/haptics'
 import { cn } from '@/lib/utils'
+import { $browserWorkstationOpen, toggleBrowserWorkstation } from '@/store/browser-workstation'
 import { $hapticsMuted, toggleHapticsMuted } from '@/store/haptics'
 import { $sidebarOpen, toggleSidebarOpen } from '@/store/layout'
 
@@ -46,6 +47,7 @@ export function TitlebarControls({ leftTools = [], tools = [], onOpenSettings }:
   const location = useLocation()
   const hapticsMuted = useStore($hapticsMuted)
   const sidebarOpen = useStore($sidebarOpen)
+  const browserWorkstationOpen = useStore($browserWorkstationOpen)
 
   const toggleHaptics = () => {
     if (!hapticsMuted) {
@@ -79,10 +81,24 @@ export function TitlebarControls({ leftTools = [], tools = [], onOpenSettings }:
     ...leftTools
   ]
 
-  // Static system tools — always pinned to the screen's right edge.
+  // Static system tools — always pinned to the screen's right edge. Both
+  // hidden while the browser panel is open — its own header (inside the
+  // panel) takes over that corner, close button included.
   const systemTools: TitlebarTool[] = [
     {
+      active: browserWorkstationOpen,
+      hidden: browserWorkstationOpen,
+      icon: <Codicon name="globe" />,
+      id: 'browser',
+      label: browserWorkstationOpen ? 'Hide browser' : 'Show browser',
+      onSelect: () => {
+        triggerHaptic('tap')
+        toggleBrowserWorkstation()
+      }
+    },
+    {
       active: hapticsMuted,
+      hidden: browserWorkstationOpen,
       icon: <Codicon name={hapticsMuted ? 'mute' : 'unmute'} />,
       id: 'haptics',
       label: hapticsMuted ? t.titlebar.unmuteHaptics : t.titlebar.muteHaptics,
