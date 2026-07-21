@@ -61,6 +61,46 @@ export function useBrowserWorkstationWidth(): number {
   return clampWidth(useStore($browserWorkstationWidth))
 }
 
+// The main content wrapper is the only sibling with no inline width — the
+// sidebar and this panel both set style.width explicitly (see controller.tsx);
+// the main content is sized by flex-1 instead. That's a reliable way to pick
+// it out without depending on sibling order (sidebar can be first or absent).
+function findMainContentEl(containerEl: Element, wrapperEl: Element): Element | null {
+  return (
+    Array.from(containerEl.children).find(
+      (child): child is HTMLElement => child instanceof HTMLElement && child !== wrapperEl && !child.style.width
+    ) ?? null
+  )
+}
+
+// Real, not guessed: the pane-tree enforces the chat area's true floor a few
+// levels down as an actual CSS min-width (currently 22vw, resolved to px) —
+// see components/pane-shell. Reading it directly, instead of assuming
+// MIN_MAIN_CONTENT_WIDTH, means the live drag stops exactly at the true
+// limit instead of overshooting it and needing the post-release correction
+// to visibly snap it back.
+function findRealMinContentWidth(mainContentEl: Element): number {
+  const stack: Element[] = [mainContentEl]
+
+  while (stack.length > 0) {
+    const el = stack.pop()
+
+    if (!el) {
+      continue
+    }
+
+    const minWidth = Number.parseFloat(getComputedStyle(el).minWidth)
+
+    if (Number.isFinite(minWidth) && minWidth > 0) {
+      return minWidth
+    }
+
+    stack.push(...Array.from(el.children))
+  }
+
+  return MIN_MAIN_CONTENT_WIDTH
+}
+
 // Live-measured ceiling for an in-progress drag. The bug this replaces:
 // maxWidthForViewport() used window.innerWidth as its base, but the flex row
 // this panel lives in is inset by the shell's own p-2 — so its real right
@@ -72,13 +112,15 @@ function measuredMaxWidth(handleEl: HTMLElement): number {
   const wrapperEl = handleEl.parentElement
   const containerEl = wrapperEl?.parentElement
 
-  if (!containerEl) {
+  if (!wrapperEl || !containerEl) {
     return maxWidthForViewport()
   }
 
   const containerWidth = containerEl.getBoundingClientRect().width
   const sidebarWidth = $sidebarOpen.get() ? $ccfSidebarWidth.get() : 0
-  const available = containerWidth - sidebarWidth - MIN_MAIN_CONTENT_WIDTH - FLEX_GAPS_PX
+  const mainContentEl = findMainContentEl(containerEl, wrapperEl)
+  const minMainContentWidth = mainContentEl ? findRealMinContentWidth(mainContentEl) : MIN_MAIN_CONTENT_WIDTH
+  const available = containerWidth - sidebarWidth - minMainContentWidth - FLEX_GAPS_PX
 
   return Math.min(BROWSER_WORKSTATION_MAX_WIDTH, Math.max(BROWSER_WORKSTATION_DEFAULT_WIDTH, available))
 }
