@@ -176,7 +176,13 @@ export function BrowserWorkstationResizeHandle({ side }: { side: 'left' | 'right
       dragStart.current = { pointerX: event.clientX, width: $browserWorkstationWidth.get() }
       event.currentTarget.setPointerCapture(event.pointerId)
 
-      const handleEl = event.currentTarget
+      // Measured once, here, not inside onMove: the constraint (the chat
+      // area's real min-width, the sidebar's width) can't change mid-drag,
+      // only the window resizing could move it, which isn't happening while
+      // you're dragging. Re-walking the DOM and forcing a layout read on
+      // every single pointermove — which can fire 100+ times/sec — was the
+      // actual cause of the dragging feeling janky/not smooth.
+      const max = measuredMaxWidth(event.currentTarget)
 
       const onMove = (moveEvent: PointerEvent) => {
         if (!dragStart.current) {
@@ -185,7 +191,6 @@ export function BrowserWorkstationResizeHandle({ side }: { side: 'left' | 'right
 
         const delta = moveEvent.clientX - dragStart.current.pointerX
         const next = side === 'right' ? dragStart.current.width + delta : dragStart.current.width - delta
-        const max = measuredMaxWidth(handleEl)
         const clamped = Math.min(max, Math.max(BROWSER_WORKSTATION_DEFAULT_WIDTH, next))
 
         $browserWorkstationWidth.set(clamped)
