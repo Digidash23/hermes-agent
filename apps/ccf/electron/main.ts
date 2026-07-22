@@ -39,6 +39,11 @@ import { shouldLatchBackendStartFailure } from './backend-start-failure'
 import { detectRemoteDisplay, isWindowsBinaryPathInWsl, isWslEnvironment } from './bootstrap-platform'
 import { runBootstrap } from './bootstrap-runner'
 import {
+  ensureWorkstationMcpConfig,
+  getOrCreateWorkstationMcpKey,
+  startWorkstationMcpServer
+} from './browser-workstation-mcp-server'
+import {
   authModeFromStatus,
   buildGatewayWsUrl,
   buildGatewayWsUrlWithTicket,
@@ -936,6 +941,10 @@ function registerMediaProtocol() {
 }
 
 let mainWindow = null
+// Started once per app lifetime (guarded below) — startHermes() re-runs on
+// every backend reconnect, but the HTTP listener it starts must not.
+let workstationMcpServer: http.Server | null = null
+const WORKSTATION_MCP_PORT = 8743
 const backendConnectionState = createBackendConnectionState<ReturnType<typeof spawn>, any>()
 // True while connection-config:apply soft-rehomes the primary — suppresses the
 // backend-exit toast so an intentional kill doesn't look like a crash.
@@ -7055,6 +7064,20 @@ async function startHermes() {
     const hermesCwd = resolveHermesCwd()
     const webDist = resolveWebDist()
     const readyFile = backend.readyFile ? makeDashboardReadyFile() : null
+
+    // Gives the agent control of CCF's own browser-workstation panel (the
+    // <webview> browser tabs visible in this app) via an MCP server, the same
+    // way the older Nova desktop app wired up its Workstation panel. Must run
+    // before the backend spawns below so config.yaml already has the entry
+    // by the time the backend reads it. The HTTP listener itself is guarded
+    // to start once per app lifetime — this whole block re-runs on every
+    // backend reconnect, not just the first boot.
+    if (!workstationMcpServer) {
+      workstationMcpServer = startWorkstationMcpServer(() => mainWindow, WORKSTATION_MCP_PORT)
+    }
+
+    const workstationMcpKey = getOrCreateWorkstationMcpKey()
+    ensureWorkstationMcpConfig(path.join(HERMES_HOME, 'config.yaml'), WORKSTATION_MCP_PORT, workstationMcpKey)
 
     await advanceBootProgress('backend.spawn', `Starting Hermes backend via ${backend.label}`, 84)
     rememberLog(`Starting Hermes backend via ${backend.label}`)

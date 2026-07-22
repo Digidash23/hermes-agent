@@ -1,3 +1,11 @@
+// Side-effect only: installs window.__ccfWorkstation so the Electron main
+// process (and, through it, the MCP server in electron/browser-workstation-mcp-server.ts)
+// can drive this panel from outside the React tree. Imported here — not
+// lazily — because this module is always statically imported by the app
+// shell (contrib/controller.tsx), so it installs the bridge at app boot
+// regardless of whether the panel itself is ever opened.
+import './workstation-mcp-bridge'
+
 import { useStore } from '@nanostores/react'
 import { memo, useEffect, useRef, useState } from 'react'
 import { useLocation } from 'react-router-dom'
@@ -28,28 +36,10 @@ import { BrowserWorkstationResizeHandle, useBrowserWorkstationWidth } from '../s
 import { useCcfSidebarWidth } from '../shell/ccf-sidebar-resize'
 import { titlebarButtonClass } from '../shell/titlebar'
 
-type WebviewEl = HTMLElement & {
-  canGoBack?(): boolean
-  canGoForward?(): boolean
-  goBack?(): void
-  goForward?(): void
-  reload?(): void
-  src?: string
-}
+import { normalizeUrlOrSearch } from './normalize-url'
+import { registerWorkstationWebview, type WebviewEl } from './webview-registry'
 
 const HEADER_ACTION_CLASS = 'text-foreground/90 hover:bg-white/8! hover:text-foreground!'
-
-function normalizeUrlOrSearch(input: string): string {
-  const trimmed = input.trim()
-
-  if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) {
-    return trimmed
-  }
-
-  return trimmed.includes('.') && !trimmed.includes(' ')
-    ? `https://${trimmed}`
-    : `https://www.google.com/search?q=${encodeURIComponent(trimmed)}`
-}
 
 // Owns the width subscription so dragging the resize handle only re-renders
 // this small wrapper, not the whole app shell. ContribController used to call
@@ -153,6 +143,10 @@ const BrowserWorkstationPanel = memo(function BrowserWorkstationPanel() {
     } else {
       webviewsRef.current.delete(id)
     }
+
+    // Mirrored into the module-level registry too — see webview-registry.ts
+    // for why this needs to be reachable from outside the React tree.
+    registerWorkstationWebview(id, el)
   }
 
   const activeWebview = () => webviewsRef.current.get(activeTabId) ?? null
