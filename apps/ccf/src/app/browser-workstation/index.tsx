@@ -135,8 +135,18 @@ const BrowserWorkstationPanel = memo(function BrowserWorkstationPanel() {
       )}
     >
       {/* Single header row: tabs, new-tab, nav controls, close — all in one
-          band now, no separate URL-bar row. */}
-      <div className="flex h-9 shrink-0 items-center gap-1 px-1.5 [-webkit-app-region:no-drag]">
+          band now, no separate URL-bar row. In full screen, the panel's left
+          edge sits at the window's actual left edge for the first time — right
+          where macOS's native traffic-light window controls live. Those are
+          OS chrome, not ours, and render on top regardless of z-index, so the
+          only fix is not putting content there: same left clearance formula
+          contrib/controller.tsx uses for its own titlebar row. */}
+      <div
+        className={cn(
+          'flex h-9 shrink-0 items-center gap-1 px-1.5 [-webkit-app-region:no-drag]',
+          fullscreen && 'pl-[calc(var(--titlebar-controls-left,14px)+2*var(--titlebar-control-size,1.25rem)+1rem)]'
+        )}
+      >
         <div className="flex min-w-0 flex-1 items-center gap-1 overflow-x-auto">
           {tabs.map(tab => (
             // flex-1 + min/max width: tabs grow to show more of their title
