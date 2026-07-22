@@ -23,6 +23,7 @@ import {
 import { $sidebarOpen, toggleSidebarOpen } from '@/store/layout'
 
 import { BrowserWorkstationResizeHandle, useBrowserWorkstationWidth } from '../shell/browser-workstation-resize'
+import { useCcfSidebarWidth } from '../shell/ccf-sidebar-resize'
 import { titlebarButtonClass } from '../shell/titlebar'
 
 type WebviewEl = HTMLElement & {
@@ -59,6 +60,17 @@ export function BrowserWorkstationDock() {
   const width = useBrowserWorkstationWidth()
   const fullscreen = useStore($browserWorkstationFullscreen)
   const sidebarOpen = useStore($sidebarOpen)
+  const sidebarWidth = useCcfSidebarWidth()
+
+  // While full screen, the panel used to cover the whole window regardless
+  // of the sidebar — opening the sidebar toggled its state but rendered it
+  // underneath this panel, invisibly. This left inset now leaves room for
+  // it (same 8px outer margin + 8px gap the normal, non-fullscreen layout
+  // already uses between the sidebar and whatever's next to it — see
+  // contrib/controller.tsx's gap-2 row), so the sidebar actually pushes the
+  // panel over instead of being covered by it. Live sidebarWidth means
+  // dragging the sidebar wider while both are open keeps it in sync too.
+  const fullscreenLeft = fullscreen && sidebarOpen ? sidebarWidth + 16 : 8
 
   return (
     <>
@@ -71,8 +83,8 @@ export function BrowserWorkstationDock() {
           same div and only changing its class/style means React just
           restyles the existing node; nothing inside ever unmounts. */}
       <div
-        className={fullscreen ? 'fixed inset-0 z-[100] p-2' : 'relative h-full shrink-0'}
-        style={fullscreen ? undefined : { width: `${width}px` }}
+        className={fullscreen ? 'fixed top-2 right-2 bottom-2 z-[100]' : 'relative h-full shrink-0'}
+        style={fullscreen ? { left: fullscreenLeft } : { width: `${width}px` }}
       >
         <BrowserWorkstationPanel />
         {!fullscreen && <BrowserWorkstationResizeHandle side="left" />}
