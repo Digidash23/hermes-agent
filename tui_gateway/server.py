@@ -15185,10 +15185,15 @@ def _probe_urls(parsed) -> list[str]:
 
 def _normalize_cdp_url(parsed) -> str:
     # Concrete ``/devtools/browser/<id>`` endpoints (Browserbase et al.)
-    # are connectable as-is. Discovery-style inputs collapse to bare
-    # ``scheme://host:port`` so ``_resolve_cdp_override`` can append
-    # ``/json/version`` later without doubling the path.
-    if parsed.path.startswith("/devtools/browser/"):
+    # and ``/devtools/page/<id>`` endpoints (a specific tab/target, e.g.
+    # our own browser-workstation webview) are connectable as-is — collapsing
+    # either back to bare host:port would throw away exactly the target the
+    # caller asked for, leaving the tool to rediscover (and likely land on
+    # the wrong) target on its own. Only truly ambiguous discovery-style
+    # inputs (no path at all) collapse to ``scheme://host:port`` so
+    # ``_resolve_cdp_override`` can append ``/json/version`` later without
+    # doubling the path.
+    if parsed.path.startswith(("/devtools/browser/", "/devtools/page/")):
         return parsed.geturl()
     return parsed._replace(path="", params="", query="", fragment="").geturl()
 
