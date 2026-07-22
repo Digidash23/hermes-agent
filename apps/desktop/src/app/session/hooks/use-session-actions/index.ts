@@ -8,7 +8,8 @@ import { useI18n } from '@/i18n'
 import { type ChatMessage, preserveLocalAssistantErrors, toChatMessages } from '@/lib/chat-messages'
 import { isMissingRpcMethod } from '@/lib/gateway-rpc'
 import { setSessionYolo } from '@/lib/yolo-session'
-import { clearQueuedPrompts } from '@/store/composer-queue'
+import { migrateSessionDraft } from '@/store/composer'
+import { clearQueuedPrompts, migrateQueuedPrompts } from '@/store/composer-queue'
 import { $pinnedSessionIds } from '@/store/layout'
 import { clearNotifications, notify, notifyError } from '@/store/notifications'
 import { $activeGatewayProfile, $newChatProfile, ensureGatewayProfile, normalizeProfileKey } from '@/store/profile'
@@ -25,6 +26,7 @@ import {
   $sessions,
   $yoloActive,
   type NewChatWorkspaceTarget,
+  resolveComposerSessionKey,
   sessionPinId,
   setActiveSessionId,
   setActiveSessionStoredIdRotation,
@@ -62,6 +64,7 @@ import type { SessionCreateResponse, SessionResumeResponse, UsageStats } from '@
 
 import { NEW_CHAT_ROUTE, sessionRoute, SETTINGS_ROUTE } from '../../../routes'
 import type { ClientSessionState, SidebarNavItem } from '../../../types'
+import { sessionContextDrift } from '../session-context-drift'
 
 import {
   appendLiveSessionProjection,
@@ -175,6 +178,7 @@ async function desktopSessionCreateParams(cwd: string): Promise<Record<string, u
 }
 
 interface FreshSessionDraftOptions {
+  preserveRoute?: boolean
   replaceRoute?: boolean
   workspaceTarget?: NewChatWorkspaceTarget
 }
@@ -233,20 +237,42 @@ export function useSessionActions({
       return
     }
 
-    setSelectedStoredSessionId(storedIdRotation.nextStoredSessionId)
-    selectedStoredSessionIdRef.current = storedIdRotation.nextStoredSessionId
+    // Park unsent draft/queue on the durable lineage key (not the new tip).
+    // ChatBar scopes composer state on resolveComposerSessionKey(); migrating
+    // onto the tip while the composer is still bound to the root can lose newer
+    // live editor text on a brief remount. If the new tip row is not in
+    // $sessions yet, resolveComposerSessionKey falls back to the tip id — prefer
+    // the previous id (usually the lineage root) in that gap.
+    const previousId = storedIdRotation.previousStoredSessionId
+    const nextId = storedIdRotation.nextStoredSessionId
+    const sessions = $sessions.get()
+    const resolvedNext = resolveComposerSessionKey(nextId, sessions)
+
+    const durableKey =
+      resolvedNext && resolvedNext !== nextId
+        ? resolvedNext
+        : (resolveComposerSessionKey(previousId, sessions) ?? previousId)
+
+    migrateSessionDraft(previousId, durableKey)
+    migrateSessionDraft(nextId, durableKey)
+    migrateQueuedPrompts(previousId, durableKey)
+    migrateQueuedPrompts(nextId, durableKey)
+
+    setSelectedStoredSessionId(nextId)
+    selectedStoredSessionIdRef.current = nextId
 
     // A route overlay/page has no routed session id, but the underlying selected
     // chat still needs to follow the continuation. Update that selection in
     // place without navigating out of the surface the user deliberately opened.
-    if (routedStoredSessionId === storedIdRotation.previousStoredSessionId) {
-      navigate(sessionRoute(storedIdRotation.nextStoredSessionId), { replace: true })
+    if (routedStoredSessionId === previousId) {
+      navigate(sessionRoute(nextId), { replace: true })
     }
   }, [activeSessionIdRef, getRoutedStoredSessionId, navigate, selectedStoredSessionIdRef, storedIdRotation])
 
   const startFreshSessionDraft = useCallback(
     (options: boolean | FreshSessionDraftOptions = false) => {
       const draftOptions = typeof options === 'boolean' ? { replaceRoute: options } : options
+      const preserveRoute = draftOptions.preserveRoute ?? false
       const replaceRoute = draftOptions.replaceRoute ?? false
 
       const hasWorkspaceTarget =
@@ -267,7 +293,11 @@ export function useSessionActions({
       // rebind race, so leaving the old id here could revive it on a very fast
       // New Chat -> Enter sequence.
       onFreshDraftRouteIntent?.()
-      navigate(NEW_CHAT_ROUTE, { replace: replaceRoute })
+
+      if (!preserveRoute) {
+        navigate(NEW_CHAT_ROUTE, { replace: replaceRoute })
+      }
+
       setActiveSessionId(null)
       activeSessionIdRef.current = null
       setSelectedStoredSessionId(null)
@@ -310,7 +340,6 @@ export function useSessionActions({
 
   const createBackendSessionForSend = useCallback(
     async (preview: string | null = null): Promise<string | null> => {
-      const startingActiveSessionId = activeSessionIdRef.current
       const startingStoredSessionId = selectedStoredSessionIdRef.current
       const startingRouteToken = getRouteToken()
 
@@ -333,11 +362,24 @@ export function useSessionActions({
         const created = await requestGateway<SessionCreateResponse>('session.create', params)
         const stored = created.stored_session_id ?? null
 
-        if (
-          activeSessionIdRef.current !== startingActiveSessionId ||
-          selectedStoredSessionIdRef.current !== startingStoredSessionId ||
-          getRouteToken() !== startingRouteToken
-        ) {
+        // Only a genuine move to a DIFFERENT chat mid-create should orphan the
+        // session we just minted. The active runtime ref is deliberately not a
+        // prong: background gateway events retarget it while other sessions
+        // stream (#47709 class), and the seconds-long session.create round-trip
+        // (server-side agent + MCP init) makes that churn near-certain — every
+        // genuine user switch retargets selection AND route synchronously
+        // anyway. submitTargetStoredId is the just-created stored session, so
+        // our own upcoming re-home onto it never reads as drift.
+        const drift = sessionContextDrift({
+          startRouteToken: startingRouteToken,
+          nowRouteToken: getRouteToken(),
+          startSelectedStoredId: startingStoredSessionId,
+          nowSelectedStoredId: selectedStoredSessionIdRef.current,
+          submitTargetStoredId: stored
+        })
+
+        if (drift) {
+          console.warn('[submit-drift-abort]', drift, { phase: 'mid-create' })
           await requestGateway('session.close', { session_id: created.session_id }).catch(() => undefined)
 
           return null
