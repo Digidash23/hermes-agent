@@ -85,6 +85,10 @@ export function toggleBrowserWorkstationFullscreen() {
   $browserWorkstationFullscreen.set(!$browserWorkstationFullscreen.get())
 }
 
+export function exitBrowserWorkstationFullscreen() {
+  $browserWorkstationFullscreen.set(false)
+}
+
 export function setActiveBrowserTab(id: string) {
   $activeBrowserTabId.set(id)
 }

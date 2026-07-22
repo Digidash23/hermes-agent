@@ -1,5 +1,6 @@
 import { useStore } from '@nanostores/react'
 import { memo, useEffect, useRef, useState } from 'react'
+import { useLocation } from 'react-router-dom'
 
 import { Button } from '@/components/ui/button'
 import { Codicon } from '@/components/ui/codicon'
@@ -13,6 +14,7 @@ import {
   type BrowserTab,
   closeBrowserTab,
   closeBrowserWorkstation,
+  exitBrowserWorkstationFullscreen,
   openBrowserTab,
   setActiveBrowserTab,
   setBrowserTabFavicon,
@@ -61,6 +63,20 @@ export function BrowserWorkstationDock() {
   const fullscreen = useStore($browserWorkstationFullscreen)
   const sidebarOpen = useStore($sidebarOpen)
   const sidebarWidth = useCcfSidebarWidth()
+  const location = useLocation()
+  const previousPathname = useRef(location.pathname)
+
+  // Clicking a session (or any other page) in the sidebar changes the route
+  // but doesn't touch this panel — while full screen, the main content area
+  // it navigated to is still covered, so the click visibly did nothing. Full
+  // screen exits on any route change so what you clicked into is what you
+  // actually see, same as clicking a session normally takes you to it.
+  useEffect(() => {
+    if (location.pathname !== previousPathname.current) {
+      previousPathname.current = location.pathname
+      exitBrowserWorkstationFullscreen()
+    }
+  }, [location.pathname])
 
   // While full screen, the panel used to cover the whole window regardless
   // of the sidebar — opening the sidebar toggled its state but rendered it
