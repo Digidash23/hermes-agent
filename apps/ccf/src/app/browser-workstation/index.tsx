@@ -57,23 +57,21 @@ export function BrowserWorkstationDock() {
   const width = useBrowserWorkstationWidth()
   const fullscreen = useStore($browserWorkstationFullscreen)
 
-  if (fullscreen) {
-    // Fixed overlay covering the whole window, same p-2 inset as the shell
-    // itself uses — bypasses the flex row and its width math entirely rather
-    // than trying to make the drag-resize width math also account for a
-    // "take everything" state. No resize handle: dragging doesn't mean
-    // anything while the panel already fills the screen.
-    return (
-      <div className="fixed inset-0 z-[100] p-2">
-        <BrowserWorkstationPanel />
-      </div>
-    )
-  }
-
+  // One wrapper element, restyled — not two different JSX subtrees swapped
+  // by condition. Swapping subtrees put BrowserWorkstationPanel in a
+  // different position in the tree each time, so React unmounted and
+  // remounted it (and every <webview> inside it) on every fullscreen
+  // toggle — each <webview> is a real Electron guest view, so remounting it
+  // reloads the embedded page from scratch, which is the flash. Keeping the
+  // same div and only changing its class/style means React just restyles
+  // the existing node; nothing inside ever unmounts.
   return (
-    <div className="relative h-full shrink-0" style={{ width: `${width}px` }}>
+    <div
+      className={fullscreen ? 'fixed inset-0 z-[100] p-2' : 'relative h-full shrink-0'}
+      style={fullscreen ? undefined : { width: `${width}px` }}
+    >
       <BrowserWorkstationPanel />
-      <BrowserWorkstationResizeHandle side="left" />
+      {!fullscreen && <BrowserWorkstationResizeHandle side="left" />}
     </div>
   )
 }
