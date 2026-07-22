@@ -20,8 +20,10 @@ import {
   setBrowserTabUrl,
   toggleBrowserWorkstationFullscreen
 } from '@/store/browser-workstation'
+import { $sidebarOpen, toggleSidebarOpen } from '@/store/layout'
 
 import { BrowserWorkstationResizeHandle, useBrowserWorkstationWidth } from '../shell/browser-workstation-resize'
+import { titlebarButtonClass } from '../shell/titlebar'
 
 type WebviewEl = HTMLElement & {
   canGoBack?(): boolean
@@ -56,23 +58,51 @@ function normalizeUrlOrSearch(input: string): string {
 export function BrowserWorkstationDock() {
   const width = useBrowserWorkstationWidth()
   const fullscreen = useStore($browserWorkstationFullscreen)
+  const sidebarOpen = useStore($sidebarOpen)
 
-  // One wrapper element, restyled — not two different JSX subtrees swapped
-  // by condition. Swapping subtrees put BrowserWorkstationPanel in a
-  // different position in the tree each time, so React unmounted and
-  // remounted it (and every <webview> inside it) on every fullscreen
-  // toggle — each <webview> is a real Electron guest view, so remounting it
-  // reloads the embedded page from scratch, which is the flash. Keeping the
-  // same div and only changing its class/style means React just restyles
-  // the existing node; nothing inside ever unmounts.
   return (
-    <div
-      className={fullscreen ? 'fixed inset-0 z-[100] p-2' : 'relative h-full shrink-0'}
-      style={fullscreen ? undefined : { width: `${width}px` }}
-    >
-      <BrowserWorkstationPanel />
-      {!fullscreen && <BrowserWorkstationResizeHandle side="left" />}
-    </div>
+    <>
+      {/* One wrapper element, restyled — not two different JSX subtrees
+          swapped by condition. Swapping subtrees put BrowserWorkstationPanel
+          in a different position in the tree each time, so React
+          unmounted/remounted it (and every <webview> inside it) on every
+          fullscreen toggle — each <webview> is a real Electron guest view, so
+          remounting it reloads the embedded page from scratch. Keeping the
+          same div and only changing its class/style means React just
+          restyles the existing node; nothing inside ever unmounts. */}
+      <div
+        className={fullscreen ? 'fixed inset-0 z-[100] p-2' : 'relative h-full shrink-0'}
+        style={fullscreen ? undefined : { width: `${width}px` }}
+      >
+        <BrowserWorkstationPanel />
+        {!fullscreen && <BrowserWorkstationResizeHandle side="left" />}
+      </div>
+
+      {/* The app's real sidebar-toggle button (contrib/controller.tsx's
+          titleBar.left slot) is a separate `fixed z-70` element, independent
+          of everything else in the titlebar. This panel is z-[100] — above
+          it — so it just gets covered while full screen, same as the traffic
+          lights would be if they weren't OS-native chrome. This renders an
+          exact copy: identical position (same left-(--titlebar-controls-left)
+          top-(--titlebar-controls-top) formula), identical button classes,
+          identical icon, at a z-index above this panel — the same control, in
+          the same spot, not a second sidebar or a different control. */}
+      {fullscreen && (
+        <div className="pointer-events-auto fixed top-(--titlebar-controls-top) left-(--titlebar-controls-left) z-[110] translate-y-0.5 [-webkit-app-region:no-drag]">
+          <Tip label={sidebarOpen ? 'Hide sidebar' : 'Show sidebar'}>
+            <Button
+              aria-label={sidebarOpen ? 'Hide sidebar' : 'Show sidebar'}
+              className={cn(titlebarButtonClass, 'bg-transparent select-none')}
+              onClick={toggleSidebarOpen}
+              size="icon-titlebar"
+              variant="ghost"
+            >
+              <Codicon name="layout-sidebar-left-off" />
+            </Button>
+          </Tip>
+        </div>
+      )}
+    </>
   )
 }
 
