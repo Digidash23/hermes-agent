@@ -348,7 +348,7 @@ function collectToolMatchValues(query: string, context: string, preview: string)
 
 function toolPayloadMatchValues(payload: GatewayEventPayload | undefined): string[] {
   const payloadArgs = liveToolArgs(payload)
-  const query = firstStringField(payloadArgs, ['search_term', 'query'])
+  const query = firstStringField(payloadArgs, ['search_term', 'query', 'question', 'command', 'code', 'path'])
   const context = typeof payload?.context === 'string' ? payload.context.trim() : ''
   const preview = typeof payload?.preview === 'string' ? payload.preview.trim() : ''
 
@@ -361,7 +361,7 @@ function toolPartMatchValues(part: ChatMessagePart): string[] {
   }
 
   const args = part.args as Record<string, unknown>
-  const query = firstStringField(args, ['search_term', 'query'])
+  const query = firstStringField(args, ['search_term', 'query', 'question', 'command', 'code', 'path'])
   const context = typeof args.context === 'string' ? args.context.trim() : ''
   const preview = typeof args.preview === 'string' ? args.preview.trim() : ''
 
