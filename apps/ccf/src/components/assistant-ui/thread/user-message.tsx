@@ -2,7 +2,11 @@ import { ActionBarPrimitive, BranchPickerPrimitive, MessagePrimitive, useAuiStat
 import { type FC, type ReactNode } from 'react'
 
 import { DirectiveContent, formatRefValue } from '@/components/assistant-ui/directive-text'
-import { extractPersistedImageHints, messageAttachmentRefs, messageContentText } from '@/components/assistant-ui/thread/content'
+import {
+  extractPersistedImageHints,
+  messageAttachmentRefs,
+  messageContentText
+} from '@/components/assistant-ui/thread/content'
 import { UserMessageText } from '@/components/assistant-ui/thread/user-message-text'
 import { Codicon } from '@/components/ui/codicon'
 import { CopyButton } from '@/components/ui/copy-button'

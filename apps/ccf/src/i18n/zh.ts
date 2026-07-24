@@ -402,7 +402,8 @@ export const zh: Translations = {
       toolViewTitle: '工具调用显示',
       toolViewDesc: '产品模式隐藏原始工具数据；技术模式显示完整输入/输出。',
       composerLayoutTitle: '输入框样式',
-      composerLayoutDesc: '随性样式将审批控件与输入框连接在同一卡片内的下方一行；专业样式将其放在卡片下方独立的紧凑一行。',
+      composerLayoutDesc:
+        '随性样式将审批控件与输入框连接在同一卡片内的下方一行；专业样式将其放在卡片下方独立的紧凑一行。',
       composerLayoutCompact: '专业',
       composerLayoutUnified: '随性',
       transcriptTextSizeTitle: '对话文字大小',

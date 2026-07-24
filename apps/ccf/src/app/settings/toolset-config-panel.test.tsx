@@ -47,7 +47,9 @@ vi.mock('@/hermes', () => ({
   getToolsetModels: (name: string, provider?: string) => getToolsetModels(name, provider),
   selectToolsetModel: (name: string, model: string, provider?: string) => selectToolsetModel(name, model, provider),
   selectToolsetProvider: (name: string, provider: string, capability?: string) =>
-    capability === undefined ? selectToolsetProvider(name, provider) : selectToolsetProvider(name, provider, capability),
+    capability === undefined
+      ? selectToolsetProvider(name, provider)
+      : selectToolsetProvider(name, provider, capability),
   setEnvVar: (key: string, value: string) => setEnvVar(key, value),
   deleteEnvVar: (key: string) => deleteEnvVar(key),
   revealEnvVar: (key: string) => revealEnvVar(key),
@@ -515,7 +517,13 @@ describe('ToolsetConfigPanel', () => {
               badge: 'paid',
               tag: 'Most natural voices',
               env_vars: [
-                { key: 'ELEVENLABS_API_KEY', prompt: 'ElevenLabs API key', url: 'https://x', default: null, is_set: false }
+                {
+                  key: 'ELEVENLABS_API_KEY',
+                  prompt: 'ElevenLabs API key',
+                  url: 'https://x',
+                  default: null,
+                  is_set: false
+                }
               ],
               post_setup: null,
               requires_nous_auth: false,
@@ -560,7 +568,13 @@ describe('ToolsetConfigPanel', () => {
               badge: 'paid',
               tag: 'Most natural voices',
               env_vars: [
-                { key: 'ELEVENLABS_API_KEY', prompt: 'ElevenLabs API key', url: 'https://x', default: null, is_set: false }
+                {
+                  key: 'ELEVENLABS_API_KEY',
+                  prompt: 'ElevenLabs API key',
+                  url: 'https://x',
+                  default: null,
+                  is_set: false
+                }
               ],
               post_setup: null,
               requires_nous_auth: false,

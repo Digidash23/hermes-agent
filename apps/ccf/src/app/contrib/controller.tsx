@@ -343,10 +343,7 @@ const FOCUS_TREE = group(['workspace', 'files', 'preview', 'review', 'terminal']
 
 const TERMINAL_TREE = split(
   'column',
-  [
-    split('row', [group(['workspace']), group(['files', 'preview', 'review'])], [3.2, 1.2]),
-    group(['terminal'])
-  ],
+  [split('row', [group(['workspace']), group(['files', 'preview', 'review'])], [3.2, 1.2]), group(['terminal'])],
   [3, 1]
 )
 

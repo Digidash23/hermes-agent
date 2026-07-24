@@ -15,7 +15,5 @@ export function isMessagePinned(messageId: string): boolean {
 export function togglePinnedMessage(messageId: string): void {
   const current = $pinnedMessageIds.get()
 
-  $pinnedMessageIds.set(
-    current.includes(messageId) ? current.filter(id => id !== messageId) : [...current, messageId]
-  )
+  $pinnedMessageIds.set(current.includes(messageId) ? current.filter(id => id !== messageId) : [...current, messageId])
 }

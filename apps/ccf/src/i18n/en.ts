@@ -413,7 +413,8 @@ export const en: Translations = {
       toolViewTitle: 'Tool Call Display',
       toolViewDesc: 'Product hides raw tool payloads; Technical shows full input/output.',
       composerLayoutTitle: 'Composer Style',
-      composerLayoutDesc: 'Casual connects the approval control to the input in one row underneath. Pro keeps it in its own compact row below the card.',
+      composerLayoutDesc:
+        'Casual connects the approval control to the input in one row underneath. Pro keeps it in its own compact row below the card.',
       composerLayoutCompact: 'Pro',
       composerLayoutUnified: 'Casual',
       transcriptTextSizeTitle: 'Transcript text size',

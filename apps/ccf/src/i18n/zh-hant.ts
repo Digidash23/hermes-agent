@@ -288,7 +288,8 @@ export const zhHant = defineLocale({
       toolViewTitle: '工具呼叫顯示',
       toolViewDesc: '產品模式會隱藏原始工具 payload；技術模式會顯示完整輸入/輸出。',
       composerLayoutTitle: '輸入框樣式',
-      composerLayoutDesc: '隨性樣式將核准控制項與輸入框連接在同一卡片內的下方一列；專業樣式會將它放在卡片下方獨立的精簡一列。',
+      composerLayoutDesc:
+        '隨性樣式將核准控制項與輸入框連接在同一卡片內的下方一列；專業樣式會將它放在卡片下方獨立的精簡一列。',
       composerLayoutCompact: '專業',
       composerLayoutUnified: '隨性',
       transcriptTextSizeTitle: '對話文字大小',

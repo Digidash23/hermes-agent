@@ -210,7 +210,12 @@ export function ChatBar({
 
   const statusStackVisible = queuedPrompts.length > 0 || statusPresent
 
-  const { compactPill, stacked: narrowStacked } = useComposerMetrics({ composerRef, composerSurfaceRef, editorRef, poppedOut })
+  const { compactPill, stacked: narrowStacked } = useComposerMetrics({
+    composerRef,
+    composerSurfaceRef,
+    editorRef,
+    poppedOut
+  })
   // Unified composer style always shows the two-row layout (input on top,
   // controls below) regardless of width — same grid the narrow/responsive
   // case already uses, just forced on instead of measured.

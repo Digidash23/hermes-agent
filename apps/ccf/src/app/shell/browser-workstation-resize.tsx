@@ -171,7 +171,9 @@ export const BrowserWorkstationResizeHandle = memo(function BrowserWorkstationRe
     const overflow = wrapperEl.getBoundingClientRect().right - containerEl.getBoundingClientRect().right
 
     if (overflow > 0.5) {
-      $browserWorkstationWidth.set(Math.max(BROWSER_WORKSTATION_DEFAULT_WIDTH, $browserWorkstationWidth.get() - overflow))
+      $browserWorkstationWidth.set(
+        Math.max(BROWSER_WORKSTATION_DEFAULT_WIDTH, $browserWorkstationWidth.get() - overflow)
+      )
     }
   }, [])
 

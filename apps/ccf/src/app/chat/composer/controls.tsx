@@ -121,9 +121,7 @@ export function ComposerControls({
       ) : (
         <DictationButton disabled={disabled} onToggle={onDictate} state={state.voice} status={voiceStatus} />
       )}
-      {!hideAutoSpeak && (
-        <AutoSpeakButton active={autoSpeak} disabled={disabled} onToggle={onToggleAutoSpeak} />
-      )}
+      {!hideAutoSpeak && <AutoSpeakButton active={autoSpeak} disabled={disabled} onToggle={onToggleAutoSpeak} />}
       {showVoicePrimary ? (
         <Tip label={c.startVoice}>
           <Button

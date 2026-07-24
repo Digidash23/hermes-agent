@@ -296,7 +296,8 @@ export const ja = defineLocale({
       toolViewTitle: 'ツール呼び出しの表示',
       toolViewDesc: 'プロダクト表示は生のツールペイロードを隠し、テクニカル表示は入出力をすべて表示します。',
       composerLayoutTitle: '入力欄のスタイル',
-      composerLayoutDesc: 'カジュアルは承認コントロールを入力欄とつながった下の行に表示します。プロは独立したコンパクトな行として入力カードの下に表示します。',
+      composerLayoutDesc:
+        'カジュアルは承認コントロールを入力欄とつながった下の行に表示します。プロは独立したコンパクトな行として入力カードの下に表示します。',
       composerLayoutCompact: 'プロ',
       composerLayoutUnified: 'カジュアル',
       transcriptTextSizeTitle: '会話テキストのサイズ',

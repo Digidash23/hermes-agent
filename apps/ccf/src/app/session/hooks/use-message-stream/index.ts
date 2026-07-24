@@ -468,10 +468,8 @@ export function useMessageStream({
             // text with the full final.)
             const finalContinuesInterim = Boolean(
               finalText &&
-                existingText &&
-                (finalText === existingText ||
-                  finalText.startsWith(existingText) ||
-                  existingText.startsWith(finalText))
+              existingText &&
+              (finalText === existingText || finalText.startsWith(existingText) || existingText.startsWith(finalText))
             )
 
             if (existing.pending || (!interimBoundaryPending && finalText && existingText === finalText)) {

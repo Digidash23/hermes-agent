@@ -177,9 +177,7 @@ function adjustSessionProfileTotal(profile: string | undefined, delta: number): 
 
   const key = normalizeProfileKey(profile)
 
-  setSessionProfileTotals(prev =>
-    key in prev ? { ...prev, [key]: Math.max(0, prev[key] + delta) } : prev
-  )
+  setSessionProfileTotals(prev => (key in prev ? { ...prev, [key]: Math.max(0, prev[key] + delta) } : prev))
 }
 
 export function useSessionActions({

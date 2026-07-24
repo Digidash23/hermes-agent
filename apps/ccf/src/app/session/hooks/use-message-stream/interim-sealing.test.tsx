@@ -260,7 +260,9 @@ describe('useMessageStream interim text sealing', () => {
     // Empty text
     await act(() => handleEvent!({ payload: { text: '' }, session_id: SID, type: 'message.interim' } as RpcEvent))
     // Undefined text
-    await act(() => handleEvent!({ payload: { text: undefined }, session_id: SID, type: 'message.interim' } as RpcEvent))
+    await act(() =>
+      handleEvent!({ payload: { text: undefined }, session_id: SID, type: 'message.interim' } as RpcEvent)
+    )
 
     // Turn continues without finalizing or throwing
     expect(getState().busy).toBe(true)
